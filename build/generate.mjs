@@ -176,13 +176,18 @@ function renderHome(locale) {
   }).join("");
   const pills = offices.map((office) => `<a href="${href(locale, "locations")}#${office.id}" data-track="office_click" data-office="${office.id}">${esc(t(office.name, locale))}${office.hq ? ` · ${esc(t(ui.hq, locale))}` : ""}</a>`).join("");
   const trusts = home.trusts.map((item) => `<article><h3>${esc(t(item.title, locale))}</h3><p>${esc(t(item.text, locale))}</p></article>`).join("");
-  return `<header class="hero"><div class="wrap">
-      <h1>${accent(t(home.title, locale), t(home.accent, locale))}</h1>
-      <p class="lead">${esc(t(home.lead, locale))}</p>
-      <div class="hero-actions">
-        <a class="btn" href="${href(locale, "contact")}#enquiry-form">${esc(t(ui.enquire, locale))}</a>
-        <a class="btn secondary" href="${href(locale, "locations")}">${esc(t(ui.seeMap, locale))}</a>
+  return `<header class="hero"><div class="wrap hero-layout">
+      <div class="hero-copy">
+        <h1>${accent(t(home.title, locale), t(home.accent, locale))}</h1>
+        <p class="lead">${esc(t(home.lead, locale))}</p>
+        <div class="hero-actions">
+          <a class="btn" href="${href(locale, "contact")}#enquiry-form">${esc(t(ui.enquire, locale))}</a>
+          <a class="btn secondary" href="${href(locale, "locations")}">${esc(t(ui.seeMap, locale))}</a>
+        </div>
       </div>
+      <figure class="hero-visual" aria-hidden="true">
+        <img src="/assets/northgo-hero.jpg" alt="" width="1024" height="576" fetchpriority="high" decoding="async">
+      </figure>
     </div></header>
     <section class="section"><div class="wrap">
       <h2>${esc(t(home.servicesTitle, locale))}</h2>
