@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Northgo — 全球據點</title>
+  <meta name="description" content="Northgo 全球辦公室地圖：一次顯示全部據點，並可依區域聚焦。" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <style>
+    :root {
+      --navy: #001b3a;
+      --navy-deep: #001028;
+      --cyan: #00d1ff;
+      --cyan-deep: #0098b8;
+      --ink: #0c1a2b;
+      --muted: #5a6b7d;
+      --line: rgba(0, 27, 58, 0.1);
+      --surface: #f4f8fc;
+      --white: #ffffff;
+      --shadow: 0 18px 40px rgba(0, 27, 58, 0.08);
+      --max: 1180px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "DM Sans", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1100px 420px at 100% -10%, rgba(0, 209, 255, 0.16), transparent 55%),
+        radial-gradient(800px 380px at -10% 8%, rgba(10, 47, 92, 0.1), transparent 50%),
+        linear-gradient(180deg, #e7f3fb 0%, var(--surface) 32%, #eef3f8 100%);
+      line-height: 1.5;
+    }
+
+    a { color: inherit; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    button:focus-visible, a:focus-visible {
+      outline: 2px solid var(--cyan-deep);
+      outline-offset: 2px;
+    }
+
+    .wrap { width: min(100% - 1.5rem, var(--max)); margin-inline: auto; }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.85rem 0;
+      background: rgba(244, 248, 252, 0.9);
+      backdrop-filter: blur(12px);
+    }
+
+    .brand {
+      font-family: "Outfit", sans-serif;
+      font-weight: 800;
+      font-size: 1.35rem;
+      letter-spacing: 0.02em;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      color: var(--navy);
+    }
+
+    .brand span { color: var(--cyan-deep); }
+
+    .brand-mark {
+      width: 0.72em;
+      height: 0.72em;
+      margin-left: 0.12em;
+      border: 2px solid var(--cyan-deep);
+      border-radius: 50%;
+      display: inline-grid;
+      place-items: center;
+    }
+
+    .brand-mark i {
+      width: 0;
+      height: 0;
+      border-style: solid;
+      border-width: 0.16em 0 0.16em 0.26em;
+      border-color: transparent transparent transparent var(--cyan-deep);
+      margin-left: 0.06em;
+    }
+
+    .top-actions { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end; }
+
+    .text-link {
+      font-size: 0.84rem;
+      font-weight: 600;
+      color: var(--navy);
+      text-decoration: none;
+      padding: 0.35rem 0.15rem;
+    }
+
+    .text-link:hover { color: var(--cyan-deep); }
+
+    .lang-switch {
+      display: inline-flex;
+      gap: 0.2rem;
+      padding: 0.2rem;
+      border-radius: 999px;
+      background: var(--white);
+      border: 1px solid var(--line);
+    }
+
+    .lang-switch button {
+      appearance: none;
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      font: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 0.35rem 0.6rem;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+
+    .lang-switch button[aria-pressed="true"] {
+      background: var(--navy);
+      color: var(--white);
+    }
+
+    .intro { padding: 0.4rem 0 1rem; }
+
+    .eyebrow {
+      margin: 0;
+      color: var(--cyan-deep);
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      font-size: 0.78rem;
+    }
+
+    h1 {
+      margin: 0.2rem 0 0.4rem;
+      font-family: "Outfit", sans-serif;
+      font-size: clamp(2rem, 4vw, 3.1rem);
+      letter-spacing: -0.03em;
+      color: var(--navy);
+      line-height: 1.05;
+    }
+
+    .lead {
+      margin: 0;
+      max-width: 68ch;
+      color: var(--navy);
+      font-size: 1.02rem;
+    }
+
+    .stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin: 0.9rem 0 0.85rem;
+      padding: 0;
+      list-style: none;
+    }
+
+    .stats li {
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 0.28rem 0.7rem;
+      font-size: 0.84rem;
+      color: var(--muted);
+    }
+
+    .stats strong { color: var(--navy); font-weight: 700; }
+
+    .regions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+    }
+
+    .regions button {
+      appearance: none;
+      border: 1px solid rgba(0, 27, 58, 0.14);
+      background: var(--white);
+      color: var(--navy);
+      font: inherit;
+      font-weight: 700;
+      font-size: 0.92rem;
+      border-radius: 999px;
+      padding: 0.45rem 0.55rem 0.45rem 0.85rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+
+    .regions button span {
+      min-width: 1.35rem;
+      text-align: center;
+      border-radius: 999px;
+      background: #e7f6fb;
+      color: var(--cyan-deep);
+      font-size: 0.75rem;
+      padding: 0.12rem 0.4rem;
+    }
+
+    .regions button[aria-pressed="true"] {
+      background: var(--navy);
+      border-color: var(--navy);
+      color: var(--white);
+    }
+
+    .regions button[aria-pressed="true"] span {
+      background: rgba(0, 209, 255, 0.18);
+      color: var(--cyan);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.65fr) minmax(270px, 0.85fr);
+      gap: 0.9rem;
+      align-items: start;
+      padding-bottom: 1.5rem;
+    }
+
+    .map-card, .office-list {
+      background: var(--white);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+    }
+
+    .map-card { padding: 0.45rem; }
+
+    .map-frame { position: relative; }
+
+    #map {
+      height: min(72vh, 680px);
+      min-height: 440px;
+      border-radius: 14px;
+      background: #dbe7f0;
+    }
+
+    #leaders, #labels {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      border-radius: 14px;
+      pointer-events: none;
+    }
+
+    #leaders { z-index: 440; }
+    #labels { z-index: 460; }
+
+    .city-label {
+      position: absolute;
+      pointer-events: auto;
+      cursor: pointer;
+      background: var(--navy);
+      color: var(--white);
+      border-radius: 999px;
+      padding: 0.12rem 0.5rem;
+      font-family: "Outfit", sans-serif;
+      font-weight: 700;
+      font-size: 0.75rem;
+      line-height: 1.35;
+      white-space: nowrap;
+      box-shadow: 0 6px 16px rgba(0, 16, 40, 0.22);
+    }
+
+    .city-label.is-active { background: var(--cyan); color: var(--navy-deep); }
+    .city-label.is-dim { opacity: 0.38; }
+
+    #leaders path {
+      fill: none;
+      stroke: rgba(0, 27, 58, 0.45);
+      stroke-width: 1.25;
+    }
+
+    .map-overlay {
+      position: absolute;
+      z-index: 500;
+      left: 0.9rem;
+      bottom: 1.6rem;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.4rem;
+      pointer-events: none;
+      max-width: calc(100% - 5rem);
+    }
+
+    .float-chip, .legend {
+      pointer-events: none;
+      background: rgba(0, 27, 58, 0.92);
+      color: var(--white);
+      border-radius: 999px;
+      padding: 0.35rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      box-shadow: 0 8px 20px rgba(0, 16, 40, 0.2);
+    }
+
+    .legend { display: inline-flex; gap: 0.75rem; align-items: center; }
+
+    .legend i {
+      width: 0.55rem;
+      height: 0.55rem;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 0.28rem;
+      vertical-align: 0.05rem;
+      background: var(--cyan);
+      box-shadow: 0 0 0 2px var(--navy);
+    }
+
+    .legend i.hq { background: var(--navy); box-shadow: 0 0 0 2px var(--cyan); }
+
+    .leaflet-control-zoom a {
+      color: var(--navy);
+      width: 32px;
+      height: 32px;
+      line-height: 32px;
+    }
+
+    .leaflet-bar {
+      border: none;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 8px 20px rgba(0, 27, 58, 0.16);
+    }
+
+    .leaflet-div-icon.pin-wrap {
+      background: transparent;
+      border: none;
+    }
+
+    .pin {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--cyan);
+      border: 2px solid var(--navy);
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.95), 0 6px 12px rgba(0, 27, 58, 0.35);
+    }
+
+    .pin.hq {
+      width: 15px;
+      height: 15px;
+      background: var(--navy);
+      border-color: var(--cyan);
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.95), 0 0 0 7px rgba(0, 209, 255, 0.35);
+    }
+
+    .pin.hq::after {
+      content: "";
+      position: absolute;
+      inset: -8px;
+      border-radius: 50%;
+      border: 2px solid rgba(0, 209, 255, 0.7);
+      animation: pulse 2.6s ease-out infinite;
+    }
+
+    .pin.is-active {
+      background: var(--cyan);
+      border-color: var(--navy);
+      transform: translate(-50%, -50%) scale(1.35);
+      z-index: 2;
+    }
+
+    .pin.is-dim { opacity: 0.28; filter: grayscale(0.35); }
+    .pin.is-dim::after { display: none; }
+
+    .route-line {
+      stroke-dasharray: 5 9;
+      animation: march 22s linear infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.7); opacity: 0.8; }
+      100% { transform: scale(1.5); opacity: 0; }
+    }
+
+    @keyframes march { to { stroke-dashoffset: -280; } }
+
+    .office-list {
+      margin: 0;
+      padding: 0.45rem;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      max-height: min(72vh, 680px);
+      overflow: auto;
+    }
+
+    .office-card {
+      border-radius: 14px;
+      border: 1px solid transparent;
+      background: #f6fafc;
+      scroll-margin: 5.5rem;
+    }
+
+    .office-card.is-active {
+      border-color: rgba(0, 209, 255, 0.85);
+      background: var(--white);
+      box-shadow: 0 0 0 3px rgba(0, 209, 255, 0.2);
+    }
+
+    .office-hit {
+      width: 100%;
+      appearance: none;
+      border: 0;
+      background: transparent;
+      font: inherit;
+      color: inherit;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      gap: 0.7rem;
+      align-items: center;
+      padding: 0.7rem 0.75rem;
+    }
+
+    .dot {
+      width: 0.7rem;
+      height: 0.7rem;
+      border-radius: 50%;
+      flex: none;
+      background: var(--cyan);
+      border: 2px solid var(--navy);
+    }
+
+    .dot.hq { background: var(--navy); border-color: var(--cyan); }
+
+    .office-name {
+      display: block;
+      font-family: "Outfit", sans-serif;
+      font-weight: 700;
+      color: var(--navy);
+      font-size: 1.02rem;
+    }
+
+    .office-meta { display: block; color: var(--muted); font-size: 0.82rem; }
+
+    .office-detail {
+      padding: 0 0.85rem 0.85rem 2.15rem;
+      display: grid;
+      gap: 0.35rem;
+      font-size: 0.9rem;
+    }
+
+    .office-detail p { margin: 0; }
+    .addr { color: var(--ink); }
+    .office-detail a { color: var(--cyan-deep); font-weight: 650; }
+    .label { font-weight: 700; color: var(--navy); margin-right: 0.25rem; }
+
+    .hint {
+      margin: 0;
+      padding: 0.85rem 0.9rem;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .map-link {
+      justify-self: start;
+      margin-top: 0.25rem;
+      text-decoration: none;
+      background: var(--navy);
+      color: var(--white) !important;
+      border-radius: 999px;
+      padding: 0.4rem 0.75rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    .map-link:hover { background: #08315f; }
+
+    footer {
+      border-top: 1px solid var(--line);
+      padding: 1rem 0 1.4rem;
+      color: var(--muted);
+      font-size: 0.82rem;
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    footer a { color: var(--navy); font-weight: 650; }
+
+    @media (max-width: 860px) {
+      .layout { grid-template-columns: 1fr; }
+      #map { height: 68vw; min-height: 320px; max-height: 520px; }
+      .office-list { max-height: none; }
+      .topbar { position: static; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .pin.hq::after, .route-line { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="topbar">
+      <a class="brand" id="brandLink" href="https://www.northgo.com/zh-tw" target="_blank" rel="noopener">
+        North<span>GO</span><span class="brand-mark" aria-hidden="true"><i></i></span>
+      </a>
+      <div class="top-actions">
+        <a class="text-link" id="sitemapLink" href="sitemap.html?lang=zh-tw">網站地圖</a>
+        <a class="text-link" id="contactLink" href="https://www.northgo.com/zh-tw/contact" target="_blank" rel="noopener">聯絡頁</a>
+        <div class="lang-switch" id="langSwitch">
+          <button type="button" data-locale="en">EN</button>
+          <button type="button" data-locale="zh-tw" aria-pressed="true">繁中</button>
+          <button type="button" data-locale="ja">日本語</button>
+          <button type="button" data-locale="vi">VI</button>
+        </div>
+      </div>
+    </header>
+
+    <section class="intro">
+      <p class="eyebrow" id="eyebrow">Locations</p>
+      <h1 id="title">全球據點</h1>
+      <p class="lead" id="lead"></p>
+      <ul class="stats" id="stats"></ul>
+      <div class="regions" id="regions" role="toolbar"></div>
+    </section>
+
+    <main class="layout">
+      <div class="map-card">
+        <div class="map-frame">
+          <div id="map" role="application"></div>
+          <svg id="leaders" aria-hidden="true"></svg>
+          <div id="labels"></div>
+          <div class="map-overlay">
+            <div class="float-chip" id="floatChip"></div>
+            <div class="legend" id="legend"></div>
+          </div>
+        </div>
+      </div>
+      <ul class="office-list" id="officeList"></ul>
+    </main>
+
+    <footer>
+      <p id="footerSource"></p>
+      <p id="footerNote"></p>
+    </footer>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script>
+    const LOCALES = {
+      en: { prefix: "", htmlLang: "en" },
+      "zh-tw": { prefix: "/zh-tw", htmlLang: "zh-Hant" },
+      ja: { prefix: "/ja", htmlLang: "ja" },
+      vi: { prefix: "/vi", htmlLang: "vi" }
+    };
+
+    const COPY = {
+      en: {
+        pageTitle: "Northgo — Global offices",
+        eyebrow: "Locations",
+        title: "Our global offices",
+        lead: "Every Northgo office on one map. Stay on the world view, or focus Asia, Taiwan, Japan, Southeast Asia, or North America.",
+        sitemap: "Sitemap",
+        contact: "Contact page",
+        stats: [["7", "offices"], ["4", "countries"], ["HQ", "Taipei"]],
+        regions: { all: "World", asia: "Asia", taiwan: "Taiwan", japan: "Japan", sea: "Southeast Asia", na: "North America" },
+        countries: { taiwan: "Taiwan", japan: "Japan", sea: "Vietnam", na: "United States" },
+        hq: "Head office",
+        tel: "Tel",
+        fax: "Fax",
+        email: "Email",
+        maps: "Open in Google Maps",
+        hint: "Select a pin or an office to see the address.",
+        legendHq: "Head office",
+        legendOffice: "Office",
+        footerSource: "Addresses follow the Northgo contact page.",
+        footerNote: "Lines connect the offices in the current view.",
+        mapLabel: "Office map",
+        regionLabel: "Regions"
+      },
+      "zh-tw": {
+        pageTitle: "Northgo — 全球據點",
+        eyebrow: "Locations",
+        title: "全球據點",
+        lead: "一張地圖同時標出 Northgo 全部辦公室。可維持全球視角，或聚焦亞洲、台灣、日本、東南亞與北美。",
+        sitemap: "網站地圖",
+        contact: "聯絡頁",
+        stats: [["7", "辦公室"], ["4", "國家"], ["總部", "台北"]],
+        regions: { all: "全球", asia: "亞洲", taiwan: "台灣", japan: "日本", sea: "東南亞", na: "北美" },
+        countries: { taiwan: "台灣", japan: "日本", sea: "越南", na: "美國" },
+        hq: "總部",
+        tel: "電話",
+        fax: "傳真",
+        email: "信箱",
+        maps: "在 Google 地圖開啟",
+        hint: "點選地圖標記或列表，查看地址與聯絡方式。",
+        legendHq: "總部",
+        legendOffice: "辦公室",
+        footerSource: "地址與電話依 Northgo 聯絡頁整理。",
+        footerNote: "線段連接目前畫面中的據點。",
+        mapLabel: "辦公室地圖",
+        regionLabel: "區域"
+      },
+      ja: {
+        pageTitle: "Northgo — グローバル拠点",
+        eyebrow: "Locations",
+        title: "グローバル拠点",
+        lead: "すべてのオフィスを1枚の地図に表示します。全世界のまま見ることも、アジア・台湾・日本・東南アジア・北米へ寄せることもできます。",
+        sitemap: "サイトマップ",
+        contact: "お問い合わせ",
+        stats: [["7", "拠点"], ["4", "か国"], ["本社", "台北"]],
+        regions: { all: "全世界", asia: "アジア", taiwan: "台湾", japan: "日本", sea: "東南アジア", na: "北米" },
+        countries: { taiwan: "台湾", japan: "日本", sea: "ベトナム", na: "アメリカ" },
+        hq: "本社",
+        tel: "TEL",
+        fax: "FAX",
+        email: "Email",
+        maps: "Google マップで開く",
+        hint: "ピンまたは一覧を選ぶと住所が表示されます。",
+        legendHq: "本社",
+        legendOffice: "オフィス",
+        footerSource: "住所と電話は Northgo のお問い合わせページに基づきます。",
+        footerNote: "線は表示中の拠点をつなぎます。",
+        mapLabel: "拠点マップ",
+        regionLabel: "地域"
+      },
+      vi: {
+        pageTitle: "Northgo — Văn phòng toàn cầu",
+        eyebrow: "Locations",
+        title: "Văn phòng toàn cầu",
+        lead: "Mọi văn phòng Northgo trên một bản đồ. Giữ góc nhìn toàn cầu, hoặc phóng tới châu Á, Đài Loan, Nhật Bản, Đông Nam Á hay Bắc Mỹ.",
+        sitemap: "Sơ đồ trang",
+        contact: "Trang liên hệ",
+        stats: [["7", "văn phòng"], ["4", "quốc gia"], ["HQ", "Đài Bắc"]],
+        regions: { all: "Toàn cầu", asia: "Châu Á", taiwan: "Đài Loan", japan: "Nhật Bản", sea: "Đông Nam Á", na: "Bắc Mỹ" },
+        countries: { taiwan: "Đài Loan", japan: "Nhật Bản", sea: "Việt Nam", na: "Hoa Kỳ" },
+        hq: "Trụ sở chính",
+        tel: "Điện thoại",
+        fax: "Fax",
+        email: "Email",
+        maps: "Mở trên Google Maps",
+        hint: "Chọn ghim hoặc văn phòng để xem địa chỉ.",
+        legendHq: "Trụ sở",
+        legendOffice: "Văn phòng",
+        footerSource: "Địa chỉ và điện thoại theo trang liên hệ Northgo.",
+        footerNote: "Đường nối các văn phòng đang hiển thị.",
+        mapLabel: "Bản đồ văn phòng",
+        regionLabel: "Khu vực"
+      }
+    };
+
+    const OFFICES = [
+      {
+        id: "tpe", region: "taiwan", hq: true, tip: "right",
+        lat: 25.0575827, lng: 121.5384048,
+        tel: "+886-2-2531-8677", fax: "+886-2-2531-8577", email: "info.tpe@northgo.com",
+        name: { en: "Taipei", "zh-tw": "台北", ja: "台北", vi: "Đài Bắc" },
+        address: {
+          en: "7F., No. 10, Sec. 3, Minsheng E. Rd., Taipei City 104511, Taiwan",
+          "zh-tw": "台北市中山區民生東路三段 10 號 7 樓",
+          ja: "台湾・台北市中山区民生東路三段10号 7階",
+          vi: "Tầng 7, số 10, đoạn 3, đường Dân Sinh Đông, Đài Bắc 104511, Đài Loan"
+        }
+      },
+      {
+        id: "txg", region: "taiwan", hq: false, tip: "left",
+        lat: 24.2712994, lng: 120.5311579,
+        tel: "+886-4-2326-2580", fax: "+886-4-2326-0308", email: "info.txg@northgo.com",
+        name: { en: "Taichung", "zh-tw": "台中", ja: "台中", vi: "Đài Trung" },
+        address: {
+          en: "No. 4, Zhongheng 11th Rd., Taichung City 435058, Taiwan",
+          "zh-tw": "台中市梧棲區中橫十一路 4 號",
+          ja: "台湾・台中市梧棲区中横十一路4号",
+          vi: "Số 4, đường Zhongheng 11, Ngô Thê, Đài Trung 435058, Đài Loan"
+        }
+      },
+      {
+        id: "khh", region: "taiwan", hq: false, tip: "bottom",
+        lat: 22.6164858, lng: 120.2934556,
+        tel: "+886-7-335-0730", fax: "+886-7-336-4536", email: "info.khh@northgo.com",
+        name: { en: "Kaohsiung", "zh-tw": "高雄", ja: "高雄", vi: "Cao Hùng" },
+        address: {
+          en: "19F-2, No. 31 Hai-Pien Rd., Kaohsiung City 802609, Taiwan",
+          "zh-tw": "高雄市苓雅區海邊路 31 號 19 樓之 2",
+          ja: "台湾・高雄市苓雅区海辺路31号 19階之2",
+          vi: "Tầng 19-2, số 31 đường Hai-Pien, Linh Nhã, Cao Hùng 802609, Đài Loan"
+        }
+      },
+      {
+        id: "tyo", region: "japan", hq: false, tip: "top",
+        lat: 35.672801, lng: 139.774142,
+        tel: "+81-3-6260-3944", fax: "+81-3-6260-3945", email: "info.tyo@northgo.com",
+        name: { en: "Tokyo", "zh-tw": "東京", ja: "東京", vi: "Tokyo" },
+        address: {
+          en: "6F, Gran+Ginza-East, 1-5-1 Shintomi, Chuo-ku, Tokyo 104-0041, Japan",
+          "zh-tw": "東京都中央區新富 1-5-1 Gran+Ginza-East 6 樓",
+          ja: "〒104-0041 東京都中央区新富1-5-1 Gran+Ginza-East 6階",
+          vi: "Tầng 6, Gran+Ginza-East, 1-5-1 Shintomi, Chuo-ku, Tokyo 104-0041, Nhật Bản"
+        }
+      },
+      {
+        id: "osa", region: "japan", hq: false, tip: "right",
+        lat: 34.6974271, lng: 135.4935556,
+        tel: "+81-6-6676-8395", fax: "+81-6-6676-8397", email: "info.osa@northgo.com",
+        name: { en: "Osaka", "zh-tw": "大阪", ja: "大阪", vi: "Osaka" },
+        address: {
+          en: "3F, Sakura-Bashi Build, 2-6-23 Sonezaki Shinchi, Kita-ku, Osaka 530-0002, Japan",
+          "zh-tw": "大阪市北區曾根崎新地 2-6-23 櫻橋大樓 3 樓",
+          ja: "〒530-0002 大阪市北区曽根崎新地2-6-23 桜橋ビル 3階",
+          vi: "Tầng 3, Sakura-Bashi Build, 2-6-23 Sonezaki Shinchi, Kita-ku, Osaka 530-0002, Nhật Bản"
+        }
+      },
+      {
+        id: "hcmc", region: "sea", hq: false, tip: "left",
+        lat: 10.7909137, lng: 106.7190326,
+        tel: "+84-28-9995-7368", fax: "", email: "info.hcmc@northgo.com",
+        name: { en: "Ho Chi Minh City", "zh-tw": "胡志明市", ja: "ホーチミン", vi: "TP. Hồ Chí Minh" },
+        address: {
+          en: "5th Floor, No. 92D Nguyen Huu Canh Street, Ward 22, Binh Thanh District, Ho Chi Minh City, Vietnam",
+          "zh-tw": "胡志明市平盛郡第 22 坊阮友敬路 92D 號 5 樓",
+          ja: "ベトナム・ホーチミン市ビンタイン区第22坊 グエン・フー・カイン通り92D 5階",
+          vi: "Tầng 5, số 92D đường Nguyễn Hữu Cảnh, Phường 22, quận Bình Thạnh, TP. Hồ Chí Minh"
+        }
+      },
+      {
+        id: "lax", region: "na", hq: false, tip: "top",
+        lat: 34.0622117, lng: -118.1343114,
+        tel: "+1-714-853-1088", fax: "", email: "info.lax@northgo.com",
+        name: { en: "Los Angeles", "zh-tw": "洛杉磯", ja: "ロサンゼルス", vi: "Los Angeles" },
+        address: {
+          en: "119 S. Atlantic Blvd, Ste #301, Monterey Park, CA 91754, USA",
+          "zh-tw": "美國加州蒙特利公園市大西洋大道南 119 號 301 室",
+          ja: "119 S. Atlantic Blvd, Ste #301, Monterey Park, CA 91754, USA",
+          vi: "119 S. Atlantic Blvd, Ste #301, Monterey Park, CA 91754, Hoa Kỳ"
+        }
+      }
+    ];
+
+    const REGIONS = [
+      { id: "all", test: () => true },
+      { id: "asia", test: (o) => o.region === "taiwan" || o.region === "japan" || o.region === "sea" },
+      { id: "taiwan", test: (o) => o.region === "taiwan" },
+      { id: "japan", test: (o) => o.region === "japan" },
+      { id: "sea", test: (o) => o.region === "sea" },
+      { id: "na", test: (o) => o.region === "na" }
+    ];
+
+    const NUDGE = {
+      tpe: [20, 26],
+      txg: [-30, 2],
+      khh: [16, -26],
+      tyo: [0, 8],
+      osa: [18, -14]
+    };
+
+    const byId = Object.fromEntries(OFFICES.map((o) => [o.id, o]));
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let locale = "zh-tw";
+    let region = "all";
+    let activeId = null;
+    let lastSpread = null;
+
+    const map = L.map("map", {
+      minZoom: 0.5,
+      maxZoom: 16,
+      zoomSnap: 0.25,
+      zoomControl: false,
+      worldCopyJump: true,
+      scrollWheelZoom: true
+    });
+    L.control.zoom({ position: "topright" }).addTo(map);
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(map);
+    map.setView([24, 15], 2);
+
+    const arcLayer = L.layerGroup().addTo(map);
+    const markers = {};
+
+    function t() { return COPY[locale]; }
+    function regionDef(id) { return REGIONS.find((r) => r.id === id); }
+    function inRegion(office, id = region) { return regionDef(id).test(office); }
+    function visibleOffices() { return OFFICES.filter((o) => inRegion(o)); }
+
+    function makeIcon(office, nudge) {
+      const [dx, dy] = nudge;
+      const cls = ["pin", office.hq ? "hq" : "", office.id === activeId ? "is-active" : "", inRegion(office) ? "" : "is-dim"].filter(Boolean).join(" ");
+      return L.divIcon({
+        className: "pin-wrap",
+        html: `<span class="${cls}"></span>`,
+        iconSize: [32, 32],
+        iconAnchor: [16 - dx, 16 + dy]
+      });
+    }
+
+    const labelLayer = document.getElementById("labels");
+    const leaderSvg = document.getElementById("leaders");
+    const labelEls = {};
+
+    OFFICES.forEach((office) => {
+      const marker = L.marker([office.lat, office.lng], { icon: makeIcon(office, [0, 0]), keyboard: true, title: office.name.en });
+      marker.on("click", () => selectOffice(office.id));
+      marker.addTo(map);
+      markers[office.id] = marker;
+      const label = document.createElement("button");
+      label.type = "button";
+      label.className = "city-label";
+      label.textContent = office.name["zh-tw"];
+      label.addEventListener("click", () => selectOffice(office.id));
+      labelLayer.appendChild(label);
+      labelEls[office.id] = label;
+    });
+
+    function shortestDelta(from, to) {
+      return ((to - from + 540) % 360) - 180;
+    }
+
+    function routeSegments(from, to) {
+      const steps = 56;
+      const dLng = shortestDelta(from.lng, to.lng);
+      const raw = [];
+      for (let i = 0; i <= steps; i++) {
+        const t = i / steps;
+        const lift = Math.sin(Math.PI * t) * Math.min(9, Math.abs(dLng) * 0.055);
+        const lat = from.lat + (to.lat - from.lat) * t + lift;
+        const lng = from.lng + dLng * t;
+        raw.push([lat, lng]);
+      }
+      const parts = [];
+      let current = [[raw[0][0], ((raw[0][1] + 180) % 360 + 360) % 360 - 180]];
+      for (let i = 1; i < raw.length; i++) {
+        const lng = ((raw[i][1] + 180) % 360 + 360) % 360 - 180;
+        const prev = current[current.length - 1][1];
+        if (Math.abs(lng - prev) > 180) {
+          parts.push(current);
+          current = [];
+        }
+        current.push([raw[i][0], lng]);
+      }
+      if (current.length > 1) parts.push(current);
+      return parts;
+    }
+
+    function drawArcs() {
+      arcLayer.clearLayers();
+      if (map.getZoom() >= 9.5) return;
+      const offices = visibleOffices();
+      const hub = offices.find((o) => o.hq) || byId.tpe;
+      const pairs = offices.some((o) => o.hq)
+        ? offices.filter((o) => o.id !== hub.id).map((o) => [hub, o])
+        : offices.length === 2 ? [[offices[0], offices[1]]] : [];
+      pairs.forEach(([a, b]) => {
+        routeSegments(a, b).forEach((segment) => {
+          L.polyline(segment, {
+            color: "#0b8caf",
+            weight: 2,
+            opacity: 0.8,
+            interactive: false,
+            className: "route-line"
+          }).addTo(arcLayer);
+        });
+      });
+    }
+
+    function clusterItems(items, dist) {
+      const parent = items.map((_, index) => index);
+      const find = (index) => parent[index] === index ? index : (parent[index] = find(parent[index]));
+      for (let i = 0; i < items.length; i++) {
+        for (let j = i + 1; j < items.length; j++) {
+          if (Math.hypot(items[i].x - items[j].x, items[i].y - items[j].y) < dist) parent[find(i)] = find(j);
+        }
+      }
+      const groups = new Map();
+      items.forEach((item, index) => {
+        const root = find(index);
+        if (!groups.has(root)) groups.set(root, []);
+        groups.get(root).push(item);
+      });
+      return [...groups.values()];
+    }
+
+    function placeLabels() {
+      const size = map.getSize();
+      if (!size || !size.x) return;
+      const spread = map.getZoom() < 3.75 && region === "all";
+      const visible = [];
+      OFFICES.forEach((office) => {
+        const nudge = spread ? (NUDGE[office.id] || [0, 0]) : [0, 0];
+        const pt = map.latLngToContainerPoint([office.lat, office.lng]);
+        const el = labelEls[office.id];
+        const x = pt.x + nudge[0];
+        const y = pt.y - nudge[1];
+        const onMap = x > -30 && y > -30 && x < size.x + 30 && y < size.y + 30;
+        el.hidden = !onMap;
+        if (!onMap) return;
+        visible.push({ office, el, x, y, w: el.offsetWidth || 52, h: el.offsetHeight || 22 });
+      });
+
+      const leaders = [];
+      clusterItems(visible, spread || region === "asia" ? 110 : 36).forEach((group) => {
+        group.sort((a, b) => a.y - b.y || a.x - b.x);
+        const maxW = Math.max(...group.map((item) => item.w));
+        const gap = 4;
+        const totalH = group.reduce((sum, item) => sum + item.h, 0) + gap * (group.length - 1);
+        const minX = Math.min(...group.map((item) => item.x));
+        const maxX = Math.max(...group.map((item) => item.x));
+        const midY = group.reduce((sum, item) => sum + item.y, 0) / group.length;
+        let lx = (minX + maxX) / 2 < size.x * 0.58 ? maxX + 12 : minX - maxW - 12;
+        if (lx < 6) lx = maxX + 12;
+        if (lx + maxW > size.x - 6) lx = Math.max(6, minX - maxW - 12);
+        let ly = Math.max(6, Math.min(midY - totalH / 2, size.y - totalH - 6));
+        group.forEach((item) => {
+          item.el.style.left = `${lx}px`;
+          item.el.style.top = `${ly}px`;
+          const endX = lx >= item.x ? lx : lx + item.w;
+          const endY = ly + item.h / 2;
+          if (Math.hypot(endX - item.x, endY - item.y) > 16) leaders.push([item.x, item.y, endX, endY]);
+          ly += item.h + gap;
+        });
+      });
+
+      leaderSvg.setAttribute("viewBox", `0 0 ${size.x} ${size.y}`);
+      leaderSvg.innerHTML = leaders.map(([x1, y1, x2, y2]) => {
+        const cx = (x1 + x2) / 2;
+        return `<path d="M ${x1.toFixed(1)} ${y1.toFixed(1)} Q ${cx.toFixed(1)} ${y1.toFixed(1)} ${x2.toFixed(1)} ${y2.toFixed(1)}" />`;
+      }).join("");
+    }
+
+    function applyMarkerLayout() {
+      const spread = map.getZoom() < 3.75 && region === "all";
+      lastSpread = spread;
+      OFFICES.forEach((office) => {
+        const nudge = spread ? (NUDGE[office.id] || [0, 0]) : [0, 0];
+        markers[office.id].setIcon(makeIcon(office, nudge));
+        const el = labelEls[office.id];
+        el.textContent = office.name[locale];
+        el.classList.toggle("is-active", office.id === activeId);
+        el.classList.toggle("is-dim", !inRegion(office));
+        el.setAttribute("aria-pressed", String(office.id === activeId));
+      });
+      placeLabels();
+    }
+
+    function fitWorld(animate) {
+      const width = Math.max(280, map.getSize().x || 800);
+      const margin = width < 720 ? 78 : 64;
+      const span = 292;
+      const usable = Math.max(180, width - margin * 2);
+      const zoom = Math.max(0.5, Math.min(2.15, Math.log2((360 * usable) / (256 * span))));
+      map.setView([26, 8], zoom, { animate: Boolean(animate) && !reduceMotion });
+    }
+
+    function fitRegion(id, animate) {
+      const motion = animate && !reduceMotion;
+      const pad = { padding: [42, 42], animate: motion, duration: 0.7 };
+      if (id === "all") return fitWorld(animate);
+      if (id === "asia") return map.fitBounds([[9.2, 103.2], [37.4, 142.8]], { ...pad, maxZoom: 5 });
+      if (id === "taiwan") return map.fitBounds([[22.15, 119.85], [25.5, 122.15]], { ...pad, maxZoom: 8, padding: [64, 72] });
+      if (id === "japan") return map.fitBounds([[34.1, 134.6], [36.25, 140.6]], { ...pad, maxZoom: 7 });
+      if (id === "sea") return map.flyTo([10.7909, 106.719], 11, { animate: motion, duration: 0.7 });
+      if (id === "na") return map.flyTo([34.0622, -118.1343], 11, { animate: motion, duration: 0.7 });
+    }
+
+    function renderChrome() {
+      const copy = t();
+      document.documentElement.lang = LOCALES[locale].htmlLang;
+      document.title = copy.pageTitle;
+      document.getElementById("eyebrow").textContent = copy.eyebrow;
+      document.getElementById("title").textContent = copy.title;
+      document.getElementById("lead").textContent = copy.lead;
+      document.getElementById("sitemapLink").textContent = copy.sitemap;
+      document.getElementById("sitemapLink").href = `sitemap.html?lang=${locale}`;
+      document.getElementById("contactLink").textContent = copy.contact;
+      const home = `https://www.northgo.com${LOCALES[locale].prefix || "/"}`;
+      document.getElementById("brandLink").href = home.endsWith("/") ? home : `${home}/`;
+      document.getElementById("contactLink").href = `https://www.northgo.com${LOCALES[locale].prefix}/contact`;
+      document.getElementById("stats").innerHTML = copy.stats.map(([n, label]) => `<li><strong>${n}</strong> ${label}</li>`).join("");
+      document.getElementById("legend").innerHTML = `<span><i class="hq"></i>${copy.legendHq}</span><span><i></i>${copy.legendOffice}</span>`;
+      document.getElementById("footerSource").innerHTML = `${copy.footerSource} <a href="https://www.northgo.com${LOCALES[locale].prefix}/contact" target="_blank" rel="noopener">northgo.com${LOCALES[locale].prefix}/contact</a>`;
+      document.getElementById("footerNote").textContent = copy.footerNote;
+      document.getElementById("map").setAttribute("aria-label", copy.mapLabel);
+      document.getElementById("regions").setAttribute("aria-label", copy.regionLabel);
+      document.querySelectorAll("#langSwitch button").forEach((btn) => {
+        btn.setAttribute("aria-pressed", String(btn.dataset.locale === locale));
+      });
+    }
+
+    function renderRegions() {
+      const copy = t();
+      document.getElementById("regions").innerHTML = REGIONS.map((item) => {
+        const count = OFFICES.filter((o) => item.test(o)).length;
+        return `<button type="button" data-region="${item.id}" aria-pressed="${item.id === region}">${copy.regions[item.id]}<span>${count}</span></button>`;
+      }).join("");
+    }
+
+    function renderFloat() {
+      const copy = t();
+      const count = visibleOffices().length;
+      document.getElementById("floatChip").textContent = `${copy.regions[region]} · ${count}`;
+    }
+
+    function renderList(scroll) {
+      const copy = t();
+      const offices = visibleOffices();
+      const list = document.getElementById("officeList");
+      const cards = offices.map((office) => {
+        const active = office.id === activeId;
+        const meta = [copy.countries[office.region], office.hq ? copy.hq : ""].filter(Boolean).join(" · ");
+        const detail = active ? `
+          <div class="office-detail">
+            <p class="addr">${office.address[locale]}</p>
+            <p><span class="label">${copy.tel}</span><a href="tel:${office.tel.replace(/[^\d+]/g, "")}">${office.tel}</a></p>
+            ${office.fax ? `<p><span class="label">${copy.fax}</span>${office.fax}</p>` : ""}
+            <p><span class="label">${copy.email}</span><a href="mailto:${office.email}">${office.email}</a></p>
+            <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=${office.lat}%2C${office.lng}" target="_blank" rel="noopener">${copy.maps}</a>
+          </div>` : "";
+        return `
+          <li>
+            <article class="office-card${active ? " is-active" : ""}" data-id="${office.id}">
+              <button type="button" class="office-hit" aria-pressed="${active}">
+                <span class="dot${office.hq ? " hq" : ""}" aria-hidden="true"></span>
+                <span>
+                  <span class="office-name">${office.name[locale]}</span>
+                  <span class="office-meta">${meta}</span>
+                </span>
+              </button>
+              ${detail}
+            </article>
+          </li>`;
+      }).join("");
+      const hint = activeId ? "" : `<li><p class="hint">${copy.hint}</p></li>`;
+      list.innerHTML = hint + cards;
+      if (scroll && activeId) {
+        list.querySelector(`[data-id="${activeId}"]`)?.scrollIntoView({ block: "nearest", behavior: reduceMotion ? "auto" : "smooth" });
+      }
+    }
+
+    function setRegion(id) {
+      region = id;
+      if (activeId && !inRegion(byId[activeId])) activeId = null;
+      renderRegions();
+      renderFloat();
+      renderList(false);
+      drawArcs();
+      fitRegion(id, true);
+      applyMarkerLayout();
+    }
+
+    function selectOffice(id) {
+      const office = byId[id];
+      if (!office) return;
+      if (!inRegion(office)) region = office.region === "sea" || office.region === "na" || office.region === "japan" || office.region === "taiwan" ? office.region : "all";
+      activeId = id;
+      renderRegions();
+      renderFloat();
+      renderList(true);
+      drawArcs();
+      applyMarkerLayout();
+      const zoom = map.getZoom() >= 14 ? map.getZoom() : 14;
+      if (reduceMotion) map.setView([office.lat, office.lng], zoom, { animate: false });
+      else map.flyTo([office.lat, office.lng], zoom, { duration: 0.75 });
+    }
+
+    document.getElementById("regions").addEventListener("click", (event) => {
+      const btn = event.target.closest("button[data-region]");
+      if (!btn) return;
+      setRegion(btn.dataset.region);
+    });
+
+    document.getElementById("officeList").addEventListener("click", (event) => {
+      if (event.target.closest("a")) return;
+      const card = event.target.closest(".office-card");
+      if (!card) return;
+      selectOffice(card.dataset.id);
+    });
+
+    document.getElementById("langSwitch").addEventListener("click", (event) => {
+      const btn = event.target.closest("button[data-locale]");
+      if (!btn || !COPY[btn.dataset.locale]) return;
+      locale = btn.dataset.locale;
+      localStorage.setItem("northgo-sitemap-lang", locale);
+      const url = new URL(location.href);
+      url.searchParams.set("lang", locale);
+      history.replaceState(null, "", url);
+      renderChrome();
+      renderRegions();
+      renderFloat();
+      renderList(false);
+      applyMarkerLayout();
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape" || !activeId) return;
+      activeId = null;
+      renderList(false);
+      applyMarkerLayout();
+      fitRegion(region, true);
+    });
+
+    map.on("move", placeLabels);
+    map.on("zoomend", () => {
+      drawArcs();
+      applyMarkerLayout();
+    });
+
+    const params = new URLSearchParams(location.search);
+    const initial = params.get("lang") || localStorage.getItem("northgo-sitemap-lang") || "zh-tw";
+    locale = COPY[initial] ? initial : "zh-tw";
+    renderChrome();
+    renderRegions();
+    renderFloat();
+    renderList(false);
+    drawArcs();
+    requestAnimationFrame(() => {
+      map.invalidateSize();
+      fitWorld(false);
+      applyMarkerLayout();
+    });
+  </script>
+</body>
+</html>

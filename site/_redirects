@@ -1,0 +1,16 @@
+# 301 map for the previous Webflow site.
+# News was linked and returned 404. Send it home.
+/news                 /           301!
+/news/                /           301!
+/zh-tw/news           /zh-tw/     301!
+/zh-tw/news/          /zh-tw/     301!
+/ja/news              /ja/        301!
+/ja/news/             /ja/        301!
+/vi/news              /vi/        301!
+/vi/news/             /vi/        301!
+
+# The old language switch used /?r=0 for English. Drop the query.
+/                     /?          301  r=0
+/zh-tw                /zh-tw/     301  r=0
+/ja                   /ja/        301  r=0
+/vi                   /vi/        301  r=0

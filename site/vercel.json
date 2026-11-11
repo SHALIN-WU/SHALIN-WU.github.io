@@ -1,0 +1,38 @@
+{
+  "redirects": [
+    {
+      "source": "/news",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/:locale(zh-tw|ja|vi)/news",
+      "destination": "/:locale/",
+      "permanent": true
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "r",
+          "value": "0"
+        }
+      ],
+      "destination": "/?",
+      "permanent": true
+    },
+    {
+      "source": "/:locale(zh-tw|ja|vi)",
+      "has": [
+        {
+          "type": "query",
+          "key": "r",
+          "value": "0"
+        }
+      ],
+      "destination": "/:locale/",
+      "permanent": true
+    }
+  ]
+}

@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Northgo — Tree Sitemap</title>
+  <meta name="description" content="Concise tree sitemap for Northgo, locale-aware." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Outfit:wght@600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --navy: #001b3a;
+      --cyan: #00d1ff;
+      --ink: #0c1a2b;
+      --muted: #5a6b7d;
+      --line: rgba(0, 27, 58, 0.12);
+      --white: #fff;
+      --max: 720px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "DM Sans", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(700px 320px at 100% 0%, rgba(0, 209, 255, 0.16), transparent 60%),
+        linear-gradient(180deg, #e8f2fa 0%, #f3f7fb 40%, #eef3f8 100%);
+      line-height: 1.45;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    .wrap {
+      width: min(100% - 1.5rem, var(--max));
+      margin: 0 auto;
+      padding: 1.5rem 0 2.5rem;
+    }
+
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      animation: rise 0.45s ease both;
+    }
+
+    .brand {
+      font-family: "Outfit", sans-serif;
+      font-weight: 800;
+      font-size: 1.35rem;
+      letter-spacing: 0.02em;
+    }
+
+    .brand span { color: #0098b8; }
+
+    h1 {
+      font-family: "Outfit", sans-serif;
+      font-size: clamp(1.5rem, 4vw, 1.9rem);
+      margin: 0.35rem 0 0.25rem;
+      color: var(--navy);
+      letter-spacing: -0.02em;
+    }
+
+    .sub {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .actions {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.55rem;
+    }
+
+    .lang-switch {
+      display: inline-flex;
+      gap: 0.25rem;
+      padding: 0.22rem;
+      border-radius: 999px;
+      background: rgba(0, 27, 58, 0.06);
+      border: 1px solid var(--line);
+    }
+
+    .lang-switch button {
+      appearance: none;
+      border: 0;
+      background: transparent;
+      font: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--muted);
+      padding: 0.35rem 0.6rem;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+
+    .lang-switch button[aria-pressed="true"] {
+      background: var(--navy);
+      color: var(--white);
+    }
+
+    .back {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #0086a3;
+    }
+
+    .panel {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: 0 16px 36px rgba(0, 27, 58, 0.07);
+      padding: 1rem 1.1rem 1.15rem;
+      animation: rise 0.5s ease 0.05s both;
+    }
+
+    .tree {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+      font-size: 0.86rem;
+    }
+
+    .tree ul {
+      list-style: none;
+      margin: 0;
+      padding: 0 0 0 1.15rem;
+      border-left: 1px solid rgba(0, 27, 58, 0.14);
+    }
+
+    .tree li {
+      position: relative;
+      margin: 0.28rem 0;
+    }
+
+    .tree ul > li::before {
+      content: "";
+      position: absolute;
+      left: -1.15rem;
+      top: 0.7em;
+      width: 0.75rem;
+      height: 1px;
+      background: rgba(0, 27, 58, 0.18);
+    }
+
+    .node {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.35rem 0.65rem;
+      padding: 0.2rem 0.35rem;
+      border-radius: 8px;
+      transition: background 0.15s;
+    }
+
+    .node:hover { background: rgba(0, 209, 255, 0.08); }
+
+    .node a {
+      color: var(--navy);
+      font-weight: 500;
+    }
+
+    .node a:hover { color: #0086a3; }
+
+    .label {
+      font-family: "DM Sans", sans-serif;
+      font-size: 0.82rem;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .root > .node a {
+      font-family: "Outfit", sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    .tag {
+      font-family: "DM Sans", sans-serif;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: #007a96;
+      background: rgba(0, 209, 255, 0.14);
+      padding: 0.12rem 0.4rem;
+      border-radius: 999px;
+    }
+
+    .tag.warn {
+      color: #b34d12;
+      background: #fff1e8;
+    }
+
+    footer {
+      margin-top: 1rem;
+      color: var(--muted);
+      font-size: 0.82rem;
+      animation: rise 0.5s ease 0.1s both;
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation: none !important;
+        transition: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <a class="brand" href="https://www.northgo.com/" target="_blank" rel="noopener">North<span>GO</span></a>
+        <h1 id="title"></h1>
+        <p class="sub" id="subtitle"></p>
+      </div>
+      <div class="actions">
+        <div class="lang-switch" id="langSwitch" role="group" aria-label="Language"></div>
+        <a class="back" id="backLink" href="sitemap.html"></a>
+      </div>
+    </header>
+
+    <div class="panel">
+      <ul class="tree" id="tree"></ul>
+    </div>
+
+    <footer id="footer"></footer>
+  </div>
+
+  <script>
+    const BASE = "https://www.northgo.com";
+    const LOCALES = {
+      en: { code: "en", prefix: "", htmlLang: "en", label: "EN" },
+      "zh-tw": { code: "zh-tw", prefix: "/zh-tw", htmlLang: "zh-Hant", label: "繁中" },
+      ja: { code: "ja", prefix: "/ja", htmlLang: "ja", label: "日本語" },
+      vi: { code: "vi", prefix: "/vi", htmlLang: "vi", label: "VI" }
+    };
+
+    const I18N = {
+      en: {
+        pageTitle: "Northgo — Tree Sitemap",
+        title: "Sitemap · Tree",
+        subtitle: "Concise site structure for the selected locale.",
+        back: "← Full sitemap",
+        footer: "Links open the selected locale on northgo.com",
+        home: "Home",
+        why: "Why Northgo",
+        about: "About",
+        contact: "Contact",
+        enquire: "Enquire now",
+        services: "Services",
+        freight: "Freight Logistics",
+        ocean: "Ocean Freight",
+        air: "Air Freight",
+        land: "Land Transport",
+        customs: "Customs Clearance",
+        project: "Project Logistics",
+        warehouse: "Warehouse Logistics",
+        shipping: "Shipping Agency",
+        company: "Company",
+        news: "News",
+        locations: "Locations",
+        legal: "Legal",
+        privacy: "Privacy Policy",
+        terms: "Terms of Service",
+        cookie: "Cookie Policy",
+        disclaimer: "Legal Disclaimer",
+        offices: ["Taipei HQ", "Taichung", "Kaohsiung", "Los Angeles", "Ho Chi Minh", "Tokyo", "Osaka"]
+      },
+      "zh-tw": {
+        pageTitle: "Northgo — 樹狀網站地圖",
+        title: "網站地圖 · 樹狀",
+        subtitle: "依選擇語系顯示精簡站點結構。",
+        back: "← 完整版網站地圖",
+        footer: "連結開啟 northgo.com 對應語系頁面",
+        home: "首頁",
+        why: "Why Northgo",
+        about: "關於我們",
+        contact: "聯絡我們",
+        enquire: "立即詢價",
+        services: "服務",
+        freight: "貨運物流",
+        ocean: "海運",
+        air: "空運",
+        land: "陸運",
+        customs: "報關",
+        project: "專案物流",
+        warehouse: "倉儲物流",
+        shipping: "船務代理",
+        company: "公司",
+        news: "最新消息",
+        locations: "據點",
+        legal: "法律",
+        privacy: "隱私權政策",
+        terms: "服務條款",
+        cookie: "Cookie 政策",
+        disclaimer: "法律聲明",
+        offices: ["台北總部", "台中", "高雄", "洛杉磯", "胡志明市", "東京", "大阪"]
+      },
+      ja: {
+        pageTitle: "Northgo — ツリーサイトマップ",
+        title: "サイトマップ · ツリー",
+        subtitle: "選択言語の簡潔なサイト構造。",
+        back: "← 詳細サイトマップ",
+        footer: "リンクは northgo.com の対応ロケールを開きます",
+        home: "ホーム",
+        why: "Why Northgo",
+        about: "会社概要",
+        contact: "お問い合わせ",
+        enquire: "今すぐ問い合わせ",
+        services: "サービス",
+        freight: "フレイト物流",
+        ocean: "海上輸送",
+        air: "航空輸送",
+        land: "陸上輸送",
+        customs: "通関",
+        project: "プロジェクト物流",
+        warehouse: "倉庫物流",
+        shipping: "シッピングエージェンシー",
+        company: "会社",
+        news: "ニュース",
+        locations: "拠点",
+        legal: "法務",
+        privacy: "プライバシー",
+        terms: "利用規約",
+        cookie: "Cookie",
+        disclaimer: "免責事項",
+        offices: ["台北本社", "台中", "高雄", "ロサンゼルス", "ホーチミン", "東京", "大阪"]
+      },
+      vi: {
+        pageTitle: "Northgo — Sơ đồ dạng cây",
+        title: "Sơ đồ trang · Cây",
+        subtitle: "Cấu trúc rút gọn theo ngôn ngữ đã chọn.",
+        back: "← Sơ đồ đầy đủ",
+        footer: "Liên kết mở trang locale tương ứng trên northgo.com",
+        home: "Trang chủ",
+        why: "Why Northgo",
+        about: "Giới thiệu",
+        contact: "Liên hệ",
+        enquire: "Yêu cầu báo giá",
+        services: "Dịch vụ",
+        freight: "Vận tải hàng hóa",
+        ocean: "Đường biển",
+        air: "Hàng không",
+        land: "Đường bộ",
+        customs: "Thông quan",
+        project: "Logistics dự án",
+        warehouse: "Kho bãi",
+        shipping: "Đại lý hàng hải",
+        company: "Công ty",
+        news: "Tin tức",
+        locations: "Địa điểm",
+        legal: "Pháp lý",
+        privacy: "Bảo mật",
+        terms: "Điều khoản",
+        cookie: "Cookie",
+        disclaimer: "Tuyên bố",
+        offices: ["Đài Bắc HQ", "Đài Trung", "Cao Hùng", "Los Angeles", "TP.HCM", "Tokyo", "Osaka"]
+      }
+    };
+
+    function pathFor(locale, path) {
+      const prefix = LOCALES[locale].prefix;
+      if (!path || path === "/") return prefix || "/";
+      return `${prefix}${path}`;
+    }
+
+    function href(locale, path) {
+      const p = pathFor(locale, path);
+      return `${BASE}${p === "/" ? "/" : p}`;
+    }
+
+    function node(locale, path, label, extra = "") {
+      return `<div class="node"><a href="${href(locale, path)}" target="_blank" rel="noopener">${pathFor(locale, path)}</a><span class="label">${label}</span>${extra}</div>`;
+    }
+
+    function render(locale) {
+      const t = I18N[locale];
+      const loc = LOCALES[locale];
+      document.documentElement.lang = loc.htmlLang;
+      document.title = t.pageTitle;
+      document.getElementById("title").textContent = t.title;
+      document.getElementById("subtitle").textContent = t.subtitle;
+      document.getElementById("backLink").href = `sitemap.html?lang=${locale}`;
+      document.getElementById("backLink").textContent = t.back;
+      document.getElementById("footer").textContent = t.footer;
+
+      document.getElementById("langSwitch").innerHTML = Object.values(LOCALES).map((l) =>
+        `<button type="button" data-locale="${l.code}" aria-pressed="${l.code === locale}">${l.label}</button>`
+      ).join("");
+
+      document.getElementById("tree").innerHTML = `
+        <li class="root">
+          ${node(locale, "/", "Northgo")}
+          <ul>
+            <li>${node(locale, "/", t.home)}</li>
+            <li>${node(locale, "/#why-northgo", t.why)}</li>
+            <li>${node(locale, "/about", t.about)}</li>
+            <li>${node(locale, "/contact", t.contact)}</li>
+            <li>${node(locale, "/contact#enquiry-form", t.enquire)}</li>
+            <li>
+              <div class="node"><span class="label">${t.services}</span></div>
+              <ul>
+                <li>
+                  ${node(locale, "/services/freight-logistics", t.freight)}
+                  <ul>
+                    <li>${node(locale, "/services/freight-logistics", t.ocean)}</li>
+                    <li>${node(locale, "/services/freight-logistics", t.air)}</li>
+                    <li>${node(locale, "/services/freight-logistics", t.land)}</li>
+                    <li>${node(locale, "/services/freight-logistics", t.customs)}</li>
+                  </ul>
+                </li>
+                <li>${node(locale, "/services/project-logistics", t.project)}</li>
+                <li>${node(locale, "/services/warehouse-logistics", t.warehouse)}</li>
+                <li>${node(locale, "/services/shipping-agency", t.shipping)}</li>
+              </ul>
+            </li>
+            <li>
+              <div class="node"><span class="label">${t.company}</span></div>
+              <ul>
+                <li>${node(locale, "/about", t.about)}</li>
+                <li>${node(locale, "/news", t.news, '<span class="tag warn">404</span>')}</li>
+              </ul>
+            </li>
+            <li>
+              ${node(locale, "/contact", t.locations)}
+              <ul>
+                ${t.offices.map((o) => `<li><div class="node"><span class="label">${o}</span></div></li>`).join("")}
+              </ul>
+            </li>
+            <li>
+              <div class="node"><span class="label">${t.legal}</span></div>
+              <ul>
+                <li>${node(locale, "/legal/privacy-policy", t.privacy)}</li>
+                <li>${node(locale, "/legal/terms", t.terms)}</li>
+                <li>${node(locale, "/legal/cookie-policy", t.cookie)}</li>
+                <li>${node(locale, "/legal/disclaimer", t.disclaimer)}</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+      `;
+
+      document.querySelectorAll("#langSwitch button").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const next = btn.dataset.locale;
+          localStorage.setItem("northgo-sitemap-lang", next);
+          const url = new URL(location.href);
+          url.searchParams.set("lang", next);
+          history.replaceState(null, "", url);
+          render(next);
+        });
+      });
+    }
+
+    const params = new URLSearchParams(location.search);
+    const initial = params.get("lang") || localStorage.getItem("northgo-sitemap-lang") || "zh-tw";
+    render(I18N[initial] ? initial : "zh-tw");
+  </script>
+</body>
+</html>
