@@ -26,12 +26,6 @@ export const ui = {
   coverage: L("How it is handled", "怎麼做", "進め方", "Cách thực hiện"),
   related: L("Related", "相關服務", "関連", "Liên quan"),
   caseEyebrow: L("Anonymized example", "匿名作業示例", "匿名の作業例", "Ví dụ ẩn danh"),
-  caseNote: L(
-    "The client is not named. This describes the handoff, not an unpublished time or cost figure.",
-    "不公開客戶名稱。這裡寫的是交接方式，不是未經確認的時效或成本數字。",
-    "顧客名は出していません。引き渡しの形であり、未確認の日数や費用ではありません。",
-    "Không nêu tên khách. Đây là cách bàn giao, không phải số ngày hay chi phí chưa được xác nhận."
-  ),
   cargo: L("Cargo", "貨種", "貨物", "Hàng"),
   lane: L("Lane", "路線", "経路", "Tuyến"),
   challenge: L("Challenge", "問題", "課題", "Vấn đề"),
@@ -47,7 +41,7 @@ export const ui = {
   enquireOffice: L("Enquire to this office", "向此辦公室詢價", "この拠点に依頼", "Gửi yêu cầu tới văn phòng này"),
   regionLabel: L("Regions", "區域", "地域", "Khu vực"),
   regions: {
-    all: L("World", "全球", "全世界", "Toàn cầu"),
+    all: L("Global", "全球", "全世界", "Toàn cầu"),
     asia: L("Asia", "亞洲", "アジア", "Châu Á"),
     taiwan: L("Taiwan", "台灣", "台湾", "Đài Loan"),
     japan: L("Japan", "日本", "日本", "Nhật Bản"),
@@ -56,10 +50,10 @@ export const ui = {
   },
   mapLabel: L("Office map", "辦公室地圖", "拠点マップ", "Bản đồ văn phòng"),
   mapFallback: L(
-    "Every address is in the list. The map loads when JavaScript is available.",
-    "地址都在清單裡。啟用 JavaScript 後會載入地圖。",
-    "住所は一覧にあります。JavaScript が有効なとき地図を読み込みます。",
-    "Mọi địa chỉ nằm trong danh sách. Bản đồ tải khi có JavaScript."
+    "Markers show approximate city locations. See office details for addresses.",
+    "標記顯示城市的大約位置。地址請見辦公室詳細資訊。",
+    "マーカーは都市のおおよその位置を示しています。住所は拠点詳細をご確認ください。",
+    "Các điểm đánh dấu cho biết vị trí gần đúng của thành phố. Xem thông tin văn phòng để biết địa chỉ."
   ),
   crumbsHome: L("Home", "首頁", "ホーム", "Trang chủ"),
   sendTitle: L("Send the shipment details", "留下可報價的貨況", "貨物の条件を送る", "Gửi thông tin lô hàng"),
@@ -459,10 +453,10 @@ export const legal = [
         "Thời gian, giá và chỗ chỉ chốt trong báo giá của văn phòng. Ví dụ trên trang dịch vụ không nêu khách và không nêu khoản tiết kiệm đã đo."
       ),
       L(
-        "Maps are provided by OpenStreetMap and links may open Google Maps. Those services have their own terms.",
-        "地圖由 OpenStreetMap 提供，連結可能開啟 Google 地圖。該等服務有自己的條款。",
-        "地図は OpenStreetMap により、リンクは Google マップを開くことがあります。各サービスの規約に従います。",
-        "Bản đồ do OpenStreetMap cung cấp và liên kết có thể mở Google Maps. Các dịch vụ đó có điều khoản riêng."
+        "Map geometry uses Natural Earth public-domain data. Address links may open Google Maps, which has its own terms.",
+        "地圖圖形使用 Natural Earth 公共領域資料。地址連結可能開啟 Google 地圖，並適用其服務條款。",
+        "地図形状には Natural Earth のパブリックドメインデータを使用しています。住所リンクは Google マップを開く場合があり、同サービスの規約が適用されます。",
+        "Hình học bản đồ dùng dữ liệu thuộc phạm vi công cộng của Natural Earth. Liên kết địa chỉ có thể mở Google Maps và tuân theo điều khoản riêng của dịch vụ này."
       ),
       L(
         "Office addresses and phone numbers follow the published Northgo contact details. If a detail has changed, the office email is the check.",

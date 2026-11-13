@@ -20,7 +20,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="theme-color" content="#001b3a">
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  
   <link rel="stylesheet" href="/assets/site.css">
   <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"LocalBusiness","name":"Northgo Đài Bắc","telephone":"+886-2-2531-8677","email":"info.tpe@northgo.com","address":{"@type":"PostalAddress","streetAddress":"Tầng 7, số 10, đoạn 3, đường Dân Sinh Đông, Đài Bắc 104511, Đài Loan","addressCountry":"TW"},"geo":{"@type":"GeoCoordinates","latitude":25.0575827,"longitude":121.5384048},"url":"https://www.northgo.com/vi/locations/#tpe","parentOrganization":{"@type":"Organization","name":"Northgo","url":"https://www.northgo.com/"}},{"@type":"LocalBusiness","name":"Northgo Đài Trung","telephone":"+886-4-2326-2580","email":"info.txg@northgo.com","address":{"@type":"PostalAddress","streetAddress":"Số 4, đường Zhongheng 11, Ngô Thê, Đài Trung 435058, Đài Loan","addressCountry":"TW"},"geo":{"@type":"GeoCoordinates","latitude":24.2712994,"longitude":120.5311579},"url":"https://www.northgo.com/vi/locations/#txg","parentOrganization":{"@type":"Organization","name":"Northgo","url":"https://www.northgo.com/"}},{"@type":"LocalBusiness","name":"Northgo Cao Hùng","telephone":"+886-7-335-0730","email":"info.khh@northgo.com","address":{"@type":"PostalAddress","streetAddress":"Tầng 19-2, số 31 đường Hai-Pien, Linh Nhã, Cao Hùng 802609, Đài Loan","addressCountry":"TW"},"geo":{"@type":"GeoCoordinates","latitude":22.6164858,"longitude":120.2934556},"url":"https://www.northgo.com/vi/locations/#khh","parentOrganization":{"@type":"Organization","name":"Northgo","url":"https://www.northgo.com/"}},{"@type":"LocalBusiness","name":"Northgo Tokyo","telephone":"+81-3-6260-3944","email":"info.tyo@northgo.com","address":{"@type":"PostalAddress","streetAddress":"Tầng 6, Gran+Ginza-East, 1-5-1 Shintomi, Chuo-ku, Tokyo 104-0041, Nhật Bản","addressCountry":"JP"},"geo":{"@type":"GeoCoordinates","latitude":35.672801,"longitude":139.774142},"url":"https://www.northgo.com/vi/locations/#tyo","parentOrganization":{"@type":"Organization","name":"Northgo","url":"https://www.northgo.com/"}},{"@type":"LocalBusiness","name":"Northgo Osaka","telephone":"+81-6-6676-8395","email":"info.osa@northgo.com","address":{"@type":"PostalAddress","streetAddress":"Tầng 3, Sakura-Bashi Build, 2-6-23 Sonezaki Shinchi, Kita-ku, Osaka 530-0002, Nhật Bản","addressCountry":"JP"},"geo":{"@type":"GeoCoordinates","latitude":34.6974271,"longitude":135.4935556},"url":"https://www.northgo.com/vi/locations/#osa","parentOrganization":{"@type":"Organization","name":"Northgo","url":"https://www.northgo.com/"}},{"@type":"LocalBusiness","name":"Northgo TP. Hồ Chí Minh","telephone":"+84-28-9995-7368","email":"info.hcmc@northgo.com","address":{"@type":"PostalAddress","streetAddress":"Tầng 5, số 92D đường Nguyễn Hữu Cảnh, Phường 22, quận Bình Thạnh, TP. Hồ Chí Minh","addressCountry":"VN"},"geo":{"@type":"GeoCoordinates","latitude":10.7909137,"longitude":106.7190326},"url":"https://www.northgo.com/vi/locations/#hcmc","parentOrganization":{"@type":"Organization","name":"Northgo","url":"https://www.northgo.com/"}},{"@type":"LocalBusiness","name":"Northgo Los Angeles","telephone":"+1-714-853-1088","email":"info.lax@northgo.com","address":{"@type":"PostalAddress","streetAddress":"119 S. Atlantic Blvd, Ste #301, Monterey Park, CA 91754, Hoa Kỳ","addressCountry":"US"},"geo":{"@type":"GeoCoordinates","latitude":34.0622117,"longitude":-118.1343114},"url":"https://www.northgo.com/vi/locations/#lax","parentOrganization":{"@type":"Organization","name":"Northgo","url":"https://www.northgo.com/"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Trang chủ","item":"https://www.northgo.com/vi/"},{"@type":"ListItem","position":2,"name":"Văn phòng tại Đài Loan, Nhật Bản, Việt Nam và Hoa Kỳ","item":"https://www.northgo.com/vi/locations/"}]}]}</script>
 </head>
@@ -49,7 +49,16 @@
       </div>
       <div class="regions" role="group" aria-label="Khu vực"><button type="button" data-region="all" aria-pressed="true">Toàn cầu</button><button type="button" data-region="asia" aria-pressed="false">Châu Á</button><button type="button" data-region="taiwan" aria-pressed="false">Đài Loan</button><button type="button" data-region="japan" aria-pressed="false">Nhật Bản</button><button type="button" data-region="sea" aria-pressed="false">Đông Nam Á</button><button type="button" data-region="na" aria-pressed="false">Bắc Mỹ</button></div>
       <div class="map-layout">
-        <div id="map" role="region" aria-label="Bản đồ văn phòng"></div>
+        <div class="map-panel">
+          <div id="map">
+            <svg id="office-map" viewBox="0 0 1200 600" role="img" aria-labelledby="office-map-title" preserveAspectRatio="xMidYMid meet">
+              <title id="office-map-title">Bản đồ văn phòng</title>
+              <image href="/assets/world-pacific.svg" width="1200" height="600"></image>
+              <g id="office-markers"></g>
+            </svg>
+          </div>
+          <p class="map-note">Các điểm đánh dấu cho biết vị trí gần đúng của thành phố. Xem thông tin văn phòng để biết địa chỉ.</p>
+        </div>
         <div class="office-list"><article class="office-card" id="tpe" data-region="taiwan" data-area="asia">
       <p class="badge">Trụ sở chính</p>
       <h3>Đài Bắc</h3>
@@ -129,7 +138,6 @@
       </p>
     </article></div>
       </div>
-      <p class="note">Mọi địa chỉ nằm trong danh sách. Bản đồ tải khi có JavaScript.</p>
       <script type="application/json" id="office-data">[{"id":"tpe","hq":true,"lat":25.0575827,"lng":121.5384048,"region":"taiwan","area":"asia","name":"Đài Bắc"},{"id":"txg","hq":false,"lat":24.2712994,"lng":120.5311579,"region":"taiwan","area":"asia","name":"Đài Trung"},{"id":"khh","hq":false,"lat":22.6164858,"lng":120.2934556,"region":"taiwan","area":"asia","name":"Cao Hùng"},{"id":"tyo","hq":false,"lat":35.672801,"lng":139.774142,"region":"japan","area":"asia","name":"Tokyo"},{"id":"osa","hq":false,"lat":34.6974271,"lng":135.4935556,"region":"japan","area":"asia","name":"Osaka"},{"id":"hcmc","hq":false,"lat":10.7909137,"lng":106.7190326,"region":"sea","area":"asia","name":"TP. Hồ Chí Minh"},{"id":"lax","hq":false,"lat":34.0622117,"lng":-118.1343114,"region":"na","area":"americas","name":"Los Angeles"}]</script>
     </div></section></main>
   <footer class="site-footer"><div class="wrap foot-grid">
@@ -139,6 +147,6 @@
       <div><h2>Pháp lý</h2><ul><li><a href="/vi/legal/privacy-policy/">Bảo mật</a></li><li><a href="/vi/legal/terms/">Điều khoản</a></li><li><a href="/vi/legal/cookie-policy/">Cookie</a></li><li><a href="/vi/legal/disclaimer/">Tuyên bố pháp lý</a></li></ul></div>
     </div><div class="wrap"><p class="fine">Northgo. Thành lập tại Đài Bắc năm 1988. · v1</p></div></footer>
   <script src="/assets/site.js"></script>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script><script src="/assets/map.js"></script>
+  <script src="/assets/map.js"></script>
 </body>
 </html>

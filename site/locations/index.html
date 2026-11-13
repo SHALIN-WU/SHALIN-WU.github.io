@@ -20,7 +20,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="theme-color" content="#001b3a">
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  
   <link rel="stylesheet" href="/assets/site.css">
   <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"LocalBusiness","name":"Northgo Taipei","telephone":"+886-2-2531-8677","email":"info.tpe@northgo.com","address":{"@type":"PostalAddress","streetAddress":"7F., No. 10, Sec. 3, Minsheng E. Rd., Taipei City 104511, Taiwan","addressCountry":"TW"},"geo":{"@type":"GeoCoordinates","latitude":25.0575827,"longitude":121.5384048},"url":"https://www.northgo.com/locations/#tpe","parentOrganization":{"@type":"Organization","name":"Northgo","url":"https://www.northgo.com/"}},{"@type":"LocalBusiness","name":"Northgo Taichung","telephone":"+886-4-2326-2580","email":"info.txg@northgo.com","address":{"@type":"PostalAddress","streetAddress":"No. 4, Zhongheng 11th Rd., Taichung City 435058, Taiwan","addressCountry":"TW"},"geo":{"@type":"GeoCoordinates","latitude":24.2712994,"longitude":120.5311579},"url":"https://www.northgo.com/locations/#txg","parentOrganization":{"@type":"Organization","name":"Northgo","url":"https://www.northgo.com/"}},{"@type":"LocalBusiness","name":"Northgo Kaohsiung","telephone":"+886-7-335-0730","email":"info.khh@northgo.com","address":{"@type":"PostalAddress","streetAddress":"19F-2, No. 31 Hai-Pien Rd., Kaohsiung City 802609, Taiwan","addressCountry":"TW"},"geo":{"@type":"GeoCoordinates","latitude":22.6164858,"longitude":120.2934556},"url":"https://www.northgo.com/locations/#khh","parentOrganization":{"@type":"Organization","name":"Northgo","url":"https://www.northgo.com/"}},{"@type":"LocalBusiness","name":"Northgo Tokyo","telephone":"+81-3-6260-3944","email":"info.tyo@northgo.com","address":{"@type":"PostalAddress","streetAddress":"6F, Gran+Ginza-East, 1-5-1 Shintomi, Chuo-ku, Tokyo 104-0041, Japan","addressCountry":"JP"},"geo":{"@type":"GeoCoordinates","latitude":35.672801,"longitude":139.774142},"url":"https://www.northgo.com/locations/#tyo","parentOrganization":{"@type":"Organization","name":"Northgo","url":"https://www.northgo.com/"}},{"@type":"LocalBusiness","name":"Northgo Osaka","telephone":"+81-6-6676-8395","email":"info.osa@northgo.com","address":{"@type":"PostalAddress","streetAddress":"3F, Sakura-Bashi Build, 2-6-23 Sonezaki Shinchi, Kita-ku, Osaka 530-0002, Japan","addressCountry":"JP"},"geo":{"@type":"GeoCoordinates","latitude":34.6974271,"longitude":135.4935556},"url":"https://www.northgo.com/locations/#osa","parentOrganization":{"@type":"Organization","name":"Northgo","url":"https://www.northgo.com/"}},{"@type":"LocalBusiness","name":"Northgo Ho Chi Minh City","telephone":"+84-28-9995-7368","email":"info.hcmc@northgo.com","address":{"@type":"PostalAddress","streetAddress":"5th Floor, No. 92D Nguyen Huu Canh Street, Ward 22, Binh Thanh District, Ho Chi Minh City, Vietnam","addressCountry":"VN"},"geo":{"@type":"GeoCoordinates","latitude":10.7909137,"longitude":106.7190326},"url":"https://www.northgo.com/locations/#hcmc","parentOrganization":{"@type":"Organization","name":"Northgo","url":"https://www.northgo.com/"}},{"@type":"LocalBusiness","name":"Northgo Los Angeles","telephone":"+1-714-853-1088","email":"info.lax@northgo.com","address":{"@type":"PostalAddress","streetAddress":"119 S. Atlantic Blvd, Ste #301, Monterey Park, CA 91754, USA","addressCountry":"US"},"geo":{"@type":"GeoCoordinates","latitude":34.0622117,"longitude":-118.1343114},"url":"https://www.northgo.com/locations/#lax","parentOrganization":{"@type":"Organization","name":"Northgo","url":"https://www.northgo.com/"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.northgo.com/"},{"@type":"ListItem","position":2,"name":"Offices in Taiwan, Japan, Vietnam, and the United States","item":"https://www.northgo.com/locations/"}]}]}</script>
 </head>
@@ -47,9 +47,18 @@
         <article class="stat"><strong>4</strong><span>Taiwan · Japan · Southeast Asia · North America</span></article>
         <article class="stat"><strong>Head office</strong><span>Taipei</span></article>
       </div>
-      <div class="regions" role="group" aria-label="Regions"><button type="button" data-region="all" aria-pressed="true">World</button><button type="button" data-region="asia" aria-pressed="false">Asia</button><button type="button" data-region="taiwan" aria-pressed="false">Taiwan</button><button type="button" data-region="japan" aria-pressed="false">Japan</button><button type="button" data-region="sea" aria-pressed="false">Southeast Asia</button><button type="button" data-region="na" aria-pressed="false">North America</button></div>
+      <div class="regions" role="group" aria-label="Regions"><button type="button" data-region="all" aria-pressed="true">Global</button><button type="button" data-region="asia" aria-pressed="false">Asia</button><button type="button" data-region="taiwan" aria-pressed="false">Taiwan</button><button type="button" data-region="japan" aria-pressed="false">Japan</button><button type="button" data-region="sea" aria-pressed="false">Southeast Asia</button><button type="button" data-region="na" aria-pressed="false">North America</button></div>
       <div class="map-layout">
-        <div id="map" role="region" aria-label="Office map"></div>
+        <div class="map-panel">
+          <div id="map">
+            <svg id="office-map" viewBox="0 0 1200 600" role="img" aria-labelledby="office-map-title" preserveAspectRatio="xMidYMid meet">
+              <title id="office-map-title">Office map</title>
+              <image href="/assets/world-pacific.svg" width="1200" height="600"></image>
+              <g id="office-markers"></g>
+            </svg>
+          </div>
+          <p class="map-note">Markers show approximate city locations. See office details for addresses.</p>
+        </div>
         <div class="office-list"><article class="office-card" id="tpe" data-region="taiwan" data-area="asia">
       <p class="badge">Head office</p>
       <h3>Taipei</h3>
@@ -129,7 +138,6 @@
       </p>
     </article></div>
       </div>
-      <p class="note">Every address is in the list. The map loads when JavaScript is available.</p>
       <script type="application/json" id="office-data">[{"id":"tpe","hq":true,"lat":25.0575827,"lng":121.5384048,"region":"taiwan","area":"asia","name":"Taipei"},{"id":"txg","hq":false,"lat":24.2712994,"lng":120.5311579,"region":"taiwan","area":"asia","name":"Taichung"},{"id":"khh","hq":false,"lat":22.6164858,"lng":120.2934556,"region":"taiwan","area":"asia","name":"Kaohsiung"},{"id":"tyo","hq":false,"lat":35.672801,"lng":139.774142,"region":"japan","area":"asia","name":"Tokyo"},{"id":"osa","hq":false,"lat":34.6974271,"lng":135.4935556,"region":"japan","area":"asia","name":"Osaka"},{"id":"hcmc","hq":false,"lat":10.7909137,"lng":106.7190326,"region":"sea","area":"asia","name":"Ho Chi Minh City"},{"id":"lax","hq":false,"lat":34.0622117,"lng":-118.1343114,"region":"na","area":"americas","name":"Los Angeles"}]</script>
     </div></section></main>
   <footer class="site-footer"><div class="wrap foot-grid">
@@ -139,6 +147,6 @@
       <div><h2>Legal</h2><ul><li><a href="/legal/privacy-policy/">Privacy policy</a></li><li><a href="/legal/terms/">Terms of service</a></li><li><a href="/legal/cookie-policy/">Cookie policy</a></li><li><a href="/legal/disclaimer/">Legal disclaimer</a></li></ul></div>
     </div><div class="wrap"><p class="fine">Northgo. Founded in Taipei in 1988. · v1</p></div></footer>
   <script src="/assets/site.js"></script>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script><script src="/assets/map.js"></script>
+  <script src="/assets/map.js"></script>
 </body>
 </html>

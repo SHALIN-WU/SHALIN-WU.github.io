@@ -106,8 +106,7 @@ function renderCase(kase, locale, card) {
     : "";
   return `<section class="case">
     <h2>${esc(t(card.title, locale))}</h2>
-    <dl>${rows}</dl>
-    <p class="note">${esc(t(ui.caseNote, locale))}</p>${link}
+    <dl>${rows}</dl>${link}
   </section>`;
 }
 
@@ -289,10 +288,18 @@ function renderLocations(locale) {
       </div>
       <div class="regions" role="group" aria-label="${esc(t(ui.regionLabel, locale))}">${regions}</div>
       <div class="map-layout">
-        <div id="map" role="region" aria-label="${esc(t(ui.mapLabel, locale))}"></div>
+        <div class="map-panel">
+          <div id="map">
+            <svg id="office-map" viewBox="0 0 1200 600" role="img" aria-labelledby="office-map-title" preserveAspectRatio="xMidYMid meet">
+              <title id="office-map-title">${esc(t(ui.mapLabel, locale))}</title>
+              <image href="/assets/world-pacific.svg" width="1200" height="600"></image>
+              <g id="office-markers"></g>
+            </svg>
+          </div>
+          <p class="map-note">${esc(t(ui.mapFallback, locale))}</p>
+        </div>
         <div class="office-list">${cards}</div>
       </div>
-      <p class="note">${esc(t(ui.mapFallback, locale))}</p>
       <script type="application/json" id="office-data">${JSON.stringify(data).replace(/</g, "\\u003c")}</script>
     </div></section>`;
 }
@@ -499,11 +506,8 @@ function layout({ locale, slug, title, description, body, jsonld, map }) {
   const xdefault = `<link rel="alternate" hreflang="x-default" href="${absolute("en", slug)}">`;
   const ogAlternates = LOCALES.filter((code) => code !== locale).map((code) => `<meta property="og:locale:alternate" content="${ogLocale[code]}">`).join("");
   const fonts = `<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">`;
-  const leaflet = map
-    ? `<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">`
-    : "";
   const scripts = map
-    ? `<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script><script src="/assets/map.js"></script>`
+    ? `<script src="/assets/map.js"></script>`
     : "";
   return `<!DOCTYPE html>
 <html lang="${htmlLang[locale]}">
@@ -527,7 +531,7 @@ function layout({ locale, slug, title, description, body, jsonld, map }) {
   <meta name="twitter:card" content="summary_large_image">
   <meta name="theme-color" content="#001b3a">
   ${fonts}
-  ${leaflet}
+  ${map ? "" : ""}
   <link rel="stylesheet" href="/assets/site.css">
   ${jsonScript({ "@context": "https://schema.org", "@graph": jsonld })}
 </head>

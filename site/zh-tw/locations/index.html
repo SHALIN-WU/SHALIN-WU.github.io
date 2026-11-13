@@ -20,7 +20,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="theme-color" content="#001b3a">
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  
   <link rel="stylesheet" href="/assets/site.css">
   <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"LocalBusiness","name":"Northgo 台北","telephone":"+886-2-2531-8677","email":"info.tpe@northgo.com","address":{"@type":"PostalAddress","streetAddress":"台北市中山區民生東路三段 10 號 7 樓","addressCountry":"TW"},"geo":{"@type":"GeoCoordinates","latitude":25.0575827,"longitude":121.5384048},"url":"https://www.northgo.com/zh-tw/locations/#tpe","parentOrganization":{"@type":"Organization","name":"Northgo","url":"https://www.northgo.com/"}},{"@type":"LocalBusiness","name":"Northgo 台中","telephone":"+886-4-2326-2580","email":"info.txg@northgo.com","address":{"@type":"PostalAddress","streetAddress":"台中市梧棲區中橫十一路 4 號","addressCountry":"TW"},"geo":{"@type":"GeoCoordinates","latitude":24.2712994,"longitude":120.5311579},"url":"https://www.northgo.com/zh-tw/locations/#txg","parentOrganization":{"@type":"Organization","name":"Northgo","url":"https://www.northgo.com/"}},{"@type":"LocalBusiness","name":"Northgo 高雄","telephone":"+886-7-335-0730","email":"info.khh@northgo.com","address":{"@type":"PostalAddress","streetAddress":"高雄市苓雅區海邊路 31 號 19 樓之 2","addressCountry":"TW"},"geo":{"@type":"GeoCoordinates","latitude":22.6164858,"longitude":120.2934556},"url":"https://www.northgo.com/zh-tw/locations/#khh","parentOrganization":{"@type":"Organization","name":"Northgo","url":"https://www.northgo.com/"}},{"@type":"LocalBusiness","name":"Northgo 東京","telephone":"+81-3-6260-3944","email":"info.tyo@northgo.com","address":{"@type":"PostalAddress","streetAddress":"東京都中央區新富 1-5-1 Gran+Ginza-East 6 樓","addressCountry":"JP"},"geo":{"@type":"GeoCoordinates","latitude":35.672801,"longitude":139.774142},"url":"https://www.northgo.com/zh-tw/locations/#tyo","parentOrganization":{"@type":"Organization","name":"Northgo","url":"https://www.northgo.com/"}},{"@type":"LocalBusiness","name":"Northgo 大阪","telephone":"+81-6-6676-8395","email":"info.osa@northgo.com","address":{"@type":"PostalAddress","streetAddress":"大阪市北區曾根崎新地 2-6-23 櫻橋大樓 3 樓","addressCountry":"JP"},"geo":{"@type":"GeoCoordinates","latitude":34.6974271,"longitude":135.4935556},"url":"https://www.northgo.com/zh-tw/locations/#osa","parentOrganization":{"@type":"Organization","name":"Northgo","url":"https://www.northgo.com/"}},{"@type":"LocalBusiness","name":"Northgo 胡志明市","telephone":"+84-28-9995-7368","email":"info.hcmc@northgo.com","address":{"@type":"PostalAddress","streetAddress":"胡志明市平盛郡第 22 坊阮友敬路 92D 號 5 樓","addressCountry":"VN"},"geo":{"@type":"GeoCoordinates","latitude":10.7909137,"longitude":106.7190326},"url":"https://www.northgo.com/zh-tw/locations/#hcmc","parentOrganization":{"@type":"Organization","name":"Northgo","url":"https://www.northgo.com/"}},{"@type":"LocalBusiness","name":"Northgo 洛杉磯","telephone":"+1-714-853-1088","email":"info.lax@northgo.com","address":{"@type":"PostalAddress","streetAddress":"美國加州蒙特利公園市大西洋大道南 119 號 301 室","addressCountry":"US"},"geo":{"@type":"GeoCoordinates","latitude":34.0622117,"longitude":-118.1343114},"url":"https://www.northgo.com/zh-tw/locations/#lax","parentOrganization":{"@type":"Organization","name":"Northgo","url":"https://www.northgo.com/"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"首頁","item":"https://www.northgo.com/zh-tw/"},{"@type":"ListItem","position":2,"name":"台灣、日本、越南與美國辦公室","item":"https://www.northgo.com/zh-tw/locations/"}]}]}</script>
 </head>
@@ -49,7 +49,16 @@
       </div>
       <div class="regions" role="group" aria-label="區域"><button type="button" data-region="all" aria-pressed="true">全球</button><button type="button" data-region="asia" aria-pressed="false">亞洲</button><button type="button" data-region="taiwan" aria-pressed="false">台灣</button><button type="button" data-region="japan" aria-pressed="false">日本</button><button type="button" data-region="sea" aria-pressed="false">東南亞</button><button type="button" data-region="na" aria-pressed="false">北美</button></div>
       <div class="map-layout">
-        <div id="map" role="region" aria-label="辦公室地圖"></div>
+        <div class="map-panel">
+          <div id="map">
+            <svg id="office-map" viewBox="0 0 1200 600" role="img" aria-labelledby="office-map-title" preserveAspectRatio="xMidYMid meet">
+              <title id="office-map-title">辦公室地圖</title>
+              <image href="/assets/world-pacific.svg" width="1200" height="600"></image>
+              <g id="office-markers"></g>
+            </svg>
+          </div>
+          <p class="map-note">標記顯示城市的大約位置。地址請見辦公室詳細資訊。</p>
+        </div>
         <div class="office-list"><article class="office-card" id="tpe" data-region="taiwan" data-area="asia">
       <p class="badge">總部</p>
       <h3>台北</h3>
@@ -129,7 +138,6 @@
       </p>
     </article></div>
       </div>
-      <p class="note">地址都在清單裡。啟用 JavaScript 後會載入地圖。</p>
       <script type="application/json" id="office-data">[{"id":"tpe","hq":true,"lat":25.0575827,"lng":121.5384048,"region":"taiwan","area":"asia","name":"台北"},{"id":"txg","hq":false,"lat":24.2712994,"lng":120.5311579,"region":"taiwan","area":"asia","name":"台中"},{"id":"khh","hq":false,"lat":22.6164858,"lng":120.2934556,"region":"taiwan","area":"asia","name":"高雄"},{"id":"tyo","hq":false,"lat":35.672801,"lng":139.774142,"region":"japan","area":"asia","name":"東京"},{"id":"osa","hq":false,"lat":34.6974271,"lng":135.4935556,"region":"japan","area":"asia","name":"大阪"},{"id":"hcmc","hq":false,"lat":10.7909137,"lng":106.7190326,"region":"sea","area":"asia","name":"胡志明市"},{"id":"lax","hq":false,"lat":34.0622117,"lng":-118.1343114,"region":"na","area":"americas","name":"洛杉磯"}]</script>
     </div></section></main>
   <footer class="site-footer"><div class="wrap foot-grid">
@@ -139,6 +147,6 @@
       <div><h2>法律</h2><ul><li><a href="/zh-tw/legal/privacy-policy/">隱私權政策</a></li><li><a href="/zh-tw/legal/terms/">服務條款</a></li><li><a href="/zh-tw/legal/cookie-policy/">Cookie 政策</a></li><li><a href="/zh-tw/legal/disclaimer/">法律聲明</a></li></ul></div>
     </div><div class="wrap"><p class="fine">Northgo。1988 年創立於台北。 · v1</p></div></footer>
   <script src="/assets/site.js"></script>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script><script src="/assets/map.js"></script>
+  <script src="/assets/map.js"></script>
 </body>
 </html>
