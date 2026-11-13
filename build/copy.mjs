@@ -211,13 +211,14 @@ export const countries = [
 ];
 
 export const home = {
-  title: L("Making logistics effortless.", "讓物流變得輕鬆。", "物流を、手間なく。", "Biến logistics thành việc đơn giản."),
-  accent: L("effortless.", "輕鬆", "手間なく", "đơn giản"),
+  eyebrow: L("Northgo · Since 1988", "NORTHGO · 自 1988", "NORTHGO · 1988年創業", "NORTHGO · Từ 1988"),
+  title: L("Making logistics effortless.", "讓物流變得輕鬆。", "物流を、手間なく。", "Logistics dễ dàng hơn."),
+  accent: L("effortless.", "輕鬆", "手間なく", "dễ dàng"),
   seoTitle: L(
     "Making logistics effortless | Northgo",
     "讓物流變得輕鬆｜Northgo",
     "物流を、手間なく。｜Northgo",
-    "Biến logistics thành việc đơn giản | Northgo"
+    "Logistics dễ dàng hơn | Northgo"
   ),
   description: L(
     "Northgo moves freight, project cargo, Taichung port warehousing, and port agency calls from offices in Taiwan, Japan, Vietnam, and the United States.",
@@ -226,11 +227,27 @@ export const home = {
     "Northgo nhận vận tải, hàng dự án, kho cảng Đài Trung và đại lý tàu từ văn phòng tại Đài Loan, Nhật Bản, Việt Nam và Hoa Kỳ."
   ),
   lead: L(
-    "Freight, project cargo, Taichung port warehousing, and port agency — handled by teams in Taiwan, Japan, Vietnam, and the United States.",
-    "貨運、專案貨、台中港倉儲與船務代理，由台灣、日本、越南與美國的團隊直接處理。",
-    "フレイト、プロジェクト貨物、台中港の倉庫、船舶代理。台湾・日本・ベトナム・米国のチームが現地で対応します。",
-    "Vận tải, hàng dự án, kho tại cảng Đài Trung và đại lý tàu — do đội ngũ tại Đài Loan, Nhật Bản, Việt Nam và Hoa Kỳ phụ trách."
+    "We believe logistics should be simple, intuitive, and straightforward to handle. With nearly forty years of experience, Northgo helps companies take the friction out of logistics and stay focused on growth.",
+    "我們相信物流應該簡單、直覺、好處理。憑藉將近四十年經驗，Northgo 協助企業減少物流摩擦、專注成長。",
+    "物流は、シンプルで直感的、そして扱いやすいものであるべきだと考えています。およそ四十年の経験をもとに、Northgo は企業の物流上の摩擦を減らし、成長に集中できるよう支えます。",
+    "Chúng tôi tin logistics phải đơn giản, trực quan và dễ xử lý. Với gần bốn mươi năm kinh nghiệm, Northgo giúp doanh nghiệp giảm ma sát trong logistics và tập trung vào tăng trưởng."
   ),
+  enquire: L("Get a quote", "立即詢價", "見積を依頼", "Yêu cầu báo giá"),
+  more: L("Learn more", "了解更多", "詳しく見る", "Tìm hiểu thêm"),
+  stats: [
+    {
+      label: L("Years in logistics", "年物流經驗", "物流経験", "Kinh nghiệm"),
+      value: L("38+", "38+", "38+", "38+")
+    },
+    {
+      label: L("Global offices", "全球據點", "世界の拠点", "Văn phòng toàn cầu"),
+      value: L("7", "7", "7", "7")
+    },
+    {
+      label: L("Dedicated support", "專責支援", "専任サポート", "Hỗ trợ chuyên trách"),
+      value: L("24/7", "24/7", "24/7", "24/7")
+    }
+  ],
   servicesTitle: L("Four services", "四項服務", "四つのサービス", "Bốn dịch vụ"),
   servicesIntro: L(
     "Choose the desk that matches the cargo. Ocean, air, road, and customs sit under freight.",
@@ -297,6 +314,65 @@ export const about = {
     "1988 年からの台北の会社です。2024 年に名前が変わり、窓口は変わっていません。",
     "Công ty Đài Bắc từ 1988. Tên đổi năm 2024. Các bàn làm việc thì không."
   ),
+  visionTitle: L("Our vision", "我們的願景", "私たちのビジョン", "Tầm nhìn"),
+  vision: L(
+    "To be the logistics brand companies trust most.",
+    "成為最受信賴的物流品牌。",
+    "最も信頼される物流ブランドになる。",
+    "Trở thành thương hiệu logistics được tin cậy nhất."
+  ),
+  missionTitle: L("Our mission", "我們的使命", "私たちの使命", "Sứ mệnh"),
+  mission: L(
+    "Make logistics feel effortless.",
+    "讓物流變得輕鬆。",
+    "物流を、手間なくする。",
+    "Làm cho logistics trở nên nhẹ nhàng."
+  ),
+  valuesTitle: L("Our values", "我們的價值觀", "私たちの価値観", "Giá trị của chúng tôi"),
+  valuesIntro: L(
+    "At Northgo, we believe doing the right thing matters more than simply doing things right. Every colleague is responsible for putting these values into practice.",
+    "在 Northgo，我們相信「做對的事，遠比把事情做對更重要。」每位夥伴都有責任實踐價值觀。",
+    "Northgo では、「正しいことをする」ことが、「手順どおりにこなす」ことよりも大切だと考えています。仲間一人ひとりが、この価値観を日々の仕事で実践する責任を負います。",
+    "Tại Northgo, chúng tôi tin rằng làm điều đúng đắn quan trọng hơn nhiều so với chỉ làm cho đúng quy trình. Mỗi người trong đội ngũ đều có trách nhiệm sống với những giá trị này."
+  ),
+  values: [
+    {
+      title: L("Customer first", "以客戶為中心", "顧客を中心に", "Lấy khách hàng làm trung tâm"),
+      text: L(
+        "We do the right thing and create value for the customer. We listen, we understand, and we aim to go beyond what they expect.",
+        "堅持做對的事、為客戶創造價值。我們傾聽、理解，並力求超越期待。",
+        "正しいことを貫き、顧客に価値を届けます。話を聞き、意図を理解し、期待を超えることを目指します。",
+        "Kiên định làm điều đúng và tạo giá trị cho khách hàng. Chúng tôi lắng nghe, thấu hiểu và nỗ lực vượt hơn kỳ vọng."
+      )
+    },
+    {
+      title: L("Integrity and transparency", "誠信與透明", "誠実と透明性", "Chính trực và minh bạch"),
+      text: L(
+        "Trust comes from honesty and consistency. Customers can follow the progress, and they know what to expect from working with us.",
+        "信任來自誠實與一致。客戶能掌握進度，並對合作有把握。",
+        "信頼は、正直さと一貫した対応から生まれます。お客様は進捗を把握でき、協力関係に安心できます。",
+        "Niềm tin đến từ sự trung thực và nhất quán. Khách hàng nắm được tiến độ và yên tâm khi hợp tác."
+      )
+    },
+    {
+      title: L("Innovation and excellence", "創新與卓越", "革新と卓越", "Đổi mới và xuất sắc"),
+      text: L(
+        "We keep improving the service, with practical answers that follow the industry and keep the company competitive.",
+        "持續改善服務，以務實方案跟上產業趨勢、維持競爭力。",
+        "サービスを改善し続け、実務に即した方法で業界の変化に追いつき、競争力を保ちます。",
+        "Không ngừng cải thiện dịch vụ, với cách làm thực tế để theo kịp xu hướng ngành và giữ sức cạnh tranh."
+      )
+    },
+    {
+      title: L("Sustainability and responsibility", "永續與責任", "持続可能性と責任", "Bền vững và trách nhiệm"),
+      text: L(
+        "We work to reduce our environmental impact and support the responsible, long-term growth of the communities we serve.",
+        "致力降低環境影響，並支持我們所服務社群的長期責任成長。",
+        "環境への影響を減らし、私たちが関わる地域の、責任ある長期的な成長を支えます。",
+        "Giảm tác động đến môi trường, đồng thời hỗ trợ sự phát triển lâu dài và có trách nhiệm của các cộng đồng chúng tôi phục vụ."
+      )
+    }
+  ],
   blocks: [
     {
       heading: L("What changed", "改了什麼", "変わったこと", "Điều đã đổi"),

@@ -157,19 +157,21 @@ html[lang="ja"] h1, html[lang="ja"] h2, html[lang="ja"] h3 {
     linear-gradient(165deg, #001028 0%, #001b3a 55%, #07345f 100%);
   color: var(--white);
 }
-.hero { padding: 2.4rem 0; overflow: hidden; }
+.hero { padding: 2.6rem 0; overflow: hidden; }
 .hero-layout {
   display: grid;
-  grid-template-columns: minmax(0, 0.88fr) minmax(25rem, 1.12fr);
-  align-items: center;
-  gap: clamp(2rem, 5vw, 4.5rem);
+  grid-template-columns: minmax(0, 1.28fr) minmax(14rem, 0.72fr);
+  align-items: stretch;
+  gap: clamp(1.25rem, 2.6vw, 2.4rem);
 }
-.hero-copy { position: relative; z-index: 1; }
+.hero-copy { position: relative; z-index: 1; min-width: 0; container-type: inline-size; }
 .hero-visual {
   position: relative;
   margin: 0;
-  min-height: 25rem;
-  align-self: stretch;
+  align-self: center;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  min-height: 0;
 }
 .hero-visual::before {
   content: "";
@@ -177,8 +179,8 @@ html[lang="ja"] h1, html[lang="ja"] h2, html[lang="ja"] h3 {
   z-index: 1;
   inset: 0;
   background:
-    linear-gradient(90deg, #001733 0%, rgba(0, 23, 51, 0.1) 30%, transparent 55%),
-    linear-gradient(180deg, rgba(0, 16, 40, 0.08), rgba(0, 16, 40, 0.28));
+    linear-gradient(90deg, #001733 0%, rgba(0, 23, 51, 0.45) 6%, transparent 14%),
+    linear-gradient(180deg, rgba(0, 16, 40, 0.04), rgba(0, 16, 40, 0.14));
   pointer-events: none;
 }
 .hero-visual img {
@@ -187,18 +189,75 @@ html[lang="ja"] h1, html[lang="ja"] h2, html[lang="ja"] h3 {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: right center;
   border-radius: 22px;
   box-shadow: 0 30px 70px rgba(0, 8, 24, 0.42);
 }
 .page-hero { padding: 2.2rem 0 2.4rem; }
-.hero h1, .page-hero h1 { font-size: clamp(2.2rem, 5vw, 4rem); margin: 0 0 0.8rem; }
+.page-hero h1 { font-size: clamp(2.2rem, 5vw, 4rem); margin: 0 0 0.8rem; }
+.hero h1 {
+  margin: 0 0 0.8rem;
+  white-space: nowrap;
+  letter-spacing: -0.03em;
+  font-size: clamp(1.2rem, 2.5vw, 3.15rem);
+  line-height: 1.12;
+}
+@supports (font-size: 1cqi) {
+  .hero h1 { font-size: clamp(1.2rem, 6.1cqi, 3.25rem); }
+  html[lang="zh-Hant"] .hero h1,
+  html[lang="ja"] .hero h1 { font-size: clamp(1.65rem, 8.4cqi, 3.55rem); }
+}
 .hero h1 em, .page-hero h1 em { font-style: normal; color: var(--cyan); }
 .lead { font-size: 1.08rem; max-width: 40rem; color: rgba(255, 255, 255, 0.88); margin: 0; }
+.hero .lead { max-width: 38rem; font-size: 1.02rem; color: rgba(255, 255, 255, 0.84); }
 .hero-actions, .band-actions { display: flex; flex-wrap: wrap; gap: 0.7rem; margin-top: 1.4rem; }
+.hero-actions .btn {
+  background: transparent;
+  color: var(--white);
+  border: 1.5px solid rgba(255, 255, 255, 0.72);
+  border-radius: 999px;
+}
+.hero-actions .btn:hover { background: rgba(255, 255, 255, 0.08); }
+.hero-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin: 1.45rem 0 0;
+}
+.hero-stats div {
+  background: rgba(8, 28, 56, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
+  padding: 0.8rem 0.85rem 0.7rem;
+}
+.hero-stats dt {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.72);
+}
+.hero-stats dd {
+  margin: 0.28rem 0 0;
+  font-family: Outfit, "PingFang TC", "Microsoft JhengHei", "Hiragino Sans", "Yu Gothic", sans-serif;
+  font-size: clamp(1.55rem, 2.4vw, 2.15rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--white);
+}
 .eyebrow { margin: 0 0 0.4rem; letter-spacing: 0.12em; text-transform: uppercase; font-size: 0.78rem; font-weight: 700; color: var(--cyan); }
 .page-hero .eyebrow { color: var(--cyan); }
 
 .section { padding: 2.6rem 0; }
+.about-principles { padding-bottom: 1.15rem; }
+.about-values { background: #e5edf4; }
+.value-card h2, .value-card h3 {
+  margin: 0;
+  color: var(--navy);
+  font-size: 1.12rem;
+  font-weight: 700;
+}
+.value-card p { margin: 0; color: var(--muted); }
 .section h2 { font-size: clamp(1.6rem, 3vw, 2.2rem); margin: 0 0 0.45rem; color: var(--navy); }
 .section .intro { margin: 0 0 1.2rem; color: var(--muted); max-width: 42rem; }
 .grid-4, .grid-3, .grid-2 { display: grid; gap: 0.9rem; }
@@ -352,8 +411,8 @@ textarea { min-height: 7rem; resize: vertical; }
 #enquiry-form, .office-card, #why-northgo { scroll-margin-top: calc(var(--header) + 0.6rem); }
 
 @media (max-width: 980px) {
-  .hero-layout { grid-template-columns: minmax(0, 0.9fr) minmax(20rem, 1.1fr); gap: 1.5rem; }
-  .hero-visual { min-height: 22rem; }
+  .hero-layout { grid-template-columns: minmax(0, 1.2fr) minmax(12.5rem, 0.68fr); gap: 1.2rem; }
+  .hero-visual { min-height: 0; }
   .grid-4, .trust { grid-template-columns: 1fr 1fr; }
   .map-layout { grid-template-columns: 1fr; }
   .foot-grid { grid-template-columns: 1fr 1fr; }
@@ -377,24 +436,39 @@ textarea { min-height: 7rem; resize: vertical; }
   #site-nav > a, .services-details summary { padding: 0.75rem 0; border-bottom: 1px solid var(--line); }
   .services-panel { position: static; width: auto; box-shadow: none; border: 0; padding: 0 0 0.4rem; }
   .bar .enquire { margin-left: auto; }
-  .hero { padding: 0; }
+  .hero { padding: 0 0 1.6rem; }
   .hero-layout {
     width: 100%;
     grid-template-columns: 1fr;
-    gap: 0;
+    gap: 1.15rem;
   }
-  .hero-copy { width: min(100% - 2rem, var(--max)); margin-inline: auto; padding: 2.5rem 0 2.2rem; }
-  .hero-visual { min-height: clamp(16rem, 58vw, 24rem); }
-  .hero-visual img { border-radius: 0; }
+  .hero-copy { width: min(100% - 2rem, var(--max)); margin-inline: auto; padding: 2.2rem 0 0; }
+  .hero-visual {
+    order: 2;
+    width: min(100% - 2rem, var(--max));
+    margin-inline: auto;
+    min-height: 0;
+    aspect-ratio: 16 / 9;
+  }
+  .hero-visual img { border-radius: 16px; position: absolute; object-position: right center; }
   .hero-visual::before {
-    background: linear-gradient(180deg, rgba(0, 27, 58, 0.72) 0%, transparent 32%, rgba(0, 16, 40, 0.22) 100%);
+    background:
+      linear-gradient(90deg, rgba(0, 23, 51, 0.7) 0%, rgba(0, 23, 51, 0.28) 6%, transparent 14%),
+      linear-gradient(180deg, rgba(0, 16, 40, 0.04), rgba(0, 16, 40, 0.14));
   }
+  .hero h1 { font-size: clamp(1.15rem, 6.4vw, 2.35rem); }
+  html[lang="zh-Hant"] .hero h1,
+  html[lang="ja"] .hero h1 { font-size: clamp(1.55rem, 8vw, 2.7rem); }
+  .hero-stats { grid-template-columns: 1fr 1fr; }
   .grid-4, .grid-3, .grid-2, .points, .trust, .map-layout, .foot-grid, .form-grid.two { grid-template-columns: 1fr; }
   .regions { flex-wrap: nowrap; overflow-x: auto; padding: 0.15rem 0 0.45rem; scrollbar-width: thin; }
   .regions button { flex: 0 0 auto; }
   #map { overflow-x: auto; scrollbar-color: #60828e #102934; }
   #office-map[data-region="all"] { width: 760px; max-width: none; }
   .case dl { grid-template-columns: 1fr; }
+}
+@media (max-width: 420px) {
+  .hero-stats { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }

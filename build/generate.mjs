@@ -177,14 +177,17 @@ function renderHome(locale) {
   }).join("");
   const pills = offices.map((office) => `<a href="${href(locale, "locations")}#${office.id}" data-track="office_click" data-office="${office.id}">${esc(t(office.name, locale))}${office.hq ? ` · ${esc(t(ui.hq, locale))}` : ""}</a>`).join("");
   const trusts = home.trusts.map((item) => `<article><h3>${esc(t(item.title, locale))}</h3><p>${esc(t(item.text, locale))}</p></article>`).join("");
+  const stats = home.stats.map((item) => `<div><dt>${esc(t(item.label, locale))}</dt><dd>${esc(t(item.value, locale))}</dd></div>`).join("");
   return `<header class="hero"><div class="wrap hero-layout">
       <div class="hero-copy">
+        <p class="eyebrow">${esc(t(home.eyebrow, locale))}</p>
         <h1>${accent(t(home.title, locale), t(home.accent, locale))}</h1>
         <p class="lead">${esc(t(home.lead, locale))}</p>
         <div class="hero-actions">
-          <a class="btn" href="${href(locale, "contact")}#enquiry-form">${esc(t(ui.enquire, locale))}</a>
-          <a class="btn secondary" href="${href(locale, "locations")}">${esc(t(ui.seeMap, locale))}</a>
+          <a class="btn" href="${href(locale, "contact")}#enquiry-form">${esc(t(home.enquire, locale))}</a>
+          <a class="btn" href="${href(locale, "about")}">${esc(t(home.more, locale))}</a>
         </div>
+        <dl class="hero-stats">${stats}</dl>
       </div>
       <figure class="hero-visual" aria-hidden="true">
         <img src="/assets/northgo-hero.jpg" alt="" width="1024" height="576" fetchpriority="high" decoding="async">
@@ -412,11 +415,19 @@ function renderContact(locale) {
 }
 
 function renderAbout(locale) {
+  const card = (title, text, level) => `<article class="card value-card"><h${level}>${esc(t(title, locale))}</h${level}><p>${esc(t(text, locale))}</p></article>`;
+  const values = about.values.map((item) => card(item.title, item.text, 3)).join("");
   const blocks = about.blocks.map((block) => `<h2>${esc(t(block.heading, locale))}</h2><p>${esc(t(block.text, locale))}</p>`).join("");
   const certs = ["IATA", "ISO 45001", "AEO"].map((name) => `<li>${name}</li>`).join("");
   return `${pageHero(locale, t(ui.about, locale), t(about.title, locale), t(about.lead, locale), [
     { href: absolute(locale, "about"), abs: absolute(locale, "about"), label: t(about.title, locale) }
   ])}
+    <section class="section about-principles"><div class="wrap"><div class="grid-2">${card(about.visionTitle, about.vision, 2)}${card(about.missionTitle, about.mission, 2)}</div></div></section>
+    <section class="section about-values"><div class="wrap">
+      <h2>${esc(t(about.valuesTitle, locale))}</h2>
+      <p class="intro">${esc(t(about.valuesIntro, locale))}</p>
+      <div class="grid-2">${values}</div>
+    </div></section>
     <section class="section"><div class="wrap prose">${blocks}<ul class="certs">${certs}</ul></div></section>`;
 }
 
