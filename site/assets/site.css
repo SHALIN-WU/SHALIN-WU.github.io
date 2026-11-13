@@ -214,7 +214,7 @@ html[lang="ja"] h1, html[lang="ja"] h2, html[lang="ja"] h3 {
 .card { padding: 1rem 1rem 1.1rem; display: flex; flex-direction: column; gap: 0.45rem; }
 .card h3 { margin: 0; font-size: 1.15rem; }
 .card p, .office-card p { margin: 0; color: var(--muted); }
-.card a.more { margin-top: auto; font-weight: 700; color: var(--cyan-deep); text-decoration: none; }
+.card a.more, .case a.more { margin-top: auto; font-weight: 700; color: var(--cyan-deep); text-decoration: none; }
 .sublinks { display: flex; flex-wrap: wrap; gap: 0.35rem 0.7rem; padding: 0; margin: 0; list-style: none; }
 .sublinks a { color: var(--navy); font-weight: 600; text-underline-offset: 0.15em; }
 .office-pills { display: flex; flex-wrap: wrap; gap: 0.5rem; }
@@ -246,6 +246,7 @@ html[lang="ja"] h1, html[lang="ja"] h2, html[lang="ja"] h3 {
 .case dt { font-weight: 700; color: var(--navy); }
 .case dd { margin: 0; }
 .note { color: var(--muted); font-size: 0.9rem; }
+.case-link { margin: 0.8rem 0 0; }
 .band {
   background: var(--navy);
   color: var(--white);

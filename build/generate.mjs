@@ -97,15 +97,17 @@ function serviceCase(service) {
   return null;
 }
 
-function renderCase(kase, locale) {
+function renderCase(kase, locale, card) {
   const rows = ["cargo", "lane", "challenge", "approach", "result"]
     .map((key) => `<dt>${esc(t(ui[key], locale))}</dt><dd>${esc(t(kase[key], locale))}</dd>`)
     .join("");
+  const link = card.link
+    ? `\n    <p class="case-link"><a class="more" href="${esc(card.link.href)}">${esc(t(card.link.label, locale))}</a></p>`
+    : "";
   return `<section class="case">
-    <p class="eyebrow">${esc(t(ui.caseEyebrow, locale))}</p>
-    <h2>${esc(t(ui.caseEyebrow, locale))}</h2>
+    <h2>${esc(t(card.title, locale))}</h2>
     <dl>${rows}</dl>
-    <p class="note">${esc(t(ui.caseNote, locale))}</p>
+    <p class="note">${esc(t(ui.caseNote, locale))}</p>${link}
   </section>`;
 }
 
@@ -204,8 +206,10 @@ function renderHome(locale) {
       <div class="trust">${trusts}</div>
     </div></section>
     <section class="section"><div class="wrap">
-      ${renderCase(industry.case, locale)}
-      <p><a class="more" href="${href(locale, industry.slug)}">${esc(t(industry.title, locale))}</a></p>
+      ${renderCase(industry.case, locale, {
+        title: industry.title,
+        link: { href: href(locale, industry.slug), label: industry.title }
+      })}
     </div></section>
     ${band(locale, "freight")}`;
 }
@@ -224,7 +228,7 @@ function renderService(locale, service) {
   return `${pageHero(locale, t(service.eyebrow, locale), t(service.title, locale), t(service.lead, locale), crumb)}
     <section class="section"><div class="wrap"><h2>${esc(t(ui.solves, locale))}</h2><p class="intro">${esc(t(service.solves, locale))}</p>
       <h2>${esc(t(ui.coverage, locale))}</h2>${renderPoints(service.points, locale)}${childBlock}</div></section>
-    <section class="section"><div class="wrap">${renderCase(kase, locale)}</div></section>
+    <section class="section"><div class="wrap">${renderCase(kase, locale, { title: service.title })}</div></section>
     ${relatedBlock(locale, service.id)}
     ${band(locale, service.id)}`;
 }
@@ -237,7 +241,7 @@ function renderIndustry(locale) {
   ];
   return `${pageHero(locale, t(industry.eyebrow, locale), t(industry.title, locale), t(industry.lead, locale), crumb)}
     <section class="section"><div class="wrap"><h2>${esc(t(ui.solves, locale))}</h2><p class="intro">${esc(t(industry.solves, locale))}</p>${renderPoints(industry.points, locale)}</div></section>
-    <section class="section"><div class="wrap">${renderCase(industry.case, locale)}</div></section>
+    <section class="section"><div class="wrap">${renderCase(industry.case, locale, { title: industry.title })}</div></section>
     ${relatedBlock(locale, "offshore")}
     ${band(locale, "project")}`;
 }
