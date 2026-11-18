@@ -10,25 +10,38 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/admin/admin.css">
 </head>
-<body>
-  <main class="login-shell">
-    <form class="login-card" id="login-form" autocomplete="on">
-      <a class="brand" href="/" aria-label="Northgo">
-        <img src="/assets/logo.svg" alt="" width="168" height="33">
-      </a>
-      <h1>後台登入</h1>
-      <p class="lead">管理前台詢價內容與處理狀態。</p>
-      <div class="error" id="login-error" hidden></div>
-      <label class="field">
-        <span>帳號</span>
-        <input name="username" autocomplete="username" required>
-      </label>
-      <label class="field">
-        <span>密碼</span>
-        <input name="password" type="password" autocomplete="current-password" required>
-      </label>
-      <button class="btn" type="submit" style="width:100%">登入</button>
-    </form>
+<body class="login-page">
+  <main class="login-split">
+    <section class="login-visual" aria-hidden="true">
+      <img src="/assets/freight-hero.jpg" alt="" width="1280" height="720">
+      <div class="login-visual-copy">
+        <img class="login-mark" src="/assets/logo-on-dark.svg" alt="" width="168" height="33">
+        <p class="login-kicker">Northgo Operations</p>
+        <h1>多人協作後台</h1>
+        <p>詢價、狀態與帳號權限，同一個工作台完成。</p>
+      </div>
+    </section>
+
+    <section class="login-panel">
+      <form class="login-card" id="login-form" autocomplete="on">
+        <a class="brand" href="/" aria-label="Northgo">
+          <img src="/assets/logo.svg" alt="" width="168" height="33">
+        </a>
+        <h2>後台登入</h2>
+        <p class="lead">使用你的 Northgo 帳號進入管理台。</p>
+        <div class="error" id="login-error" hidden></div>
+        <label class="field">
+          <span>帳號</span>
+          <input name="username" autocomplete="username" required>
+        </label>
+        <label class="field">
+          <span>密碼</span>
+          <input name="password" type="password" autocomplete="current-password" required>
+        </label>
+        <button class="btn" type="submit" style="width:100%">登入</button>
+        <p class="login-note">管理員可在後台新增專員與其他管理員帳號。</p>
+      </form>
+    </section>
   </main>
   <script>
     (async function () {

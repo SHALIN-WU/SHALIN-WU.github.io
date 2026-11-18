@@ -9,8 +9,9 @@
     "prepare:dist": "node scripts/prepare-dist.mjs",
     "start": "node server/index.mjs",
     "dev:cf": "npm run prepare:dist && wrangler pages dev dist --d1=DB",
-    "db:local": "wrangler d1 execute northgo-inquiries --local --file=./migrations/0001_init.sql",
-    "db:remote": "wrangler d1 execute northgo-inquiries --remote --file=./migrations/0001_init.sql",
+    "db:local": "wrangler d1 execute northgo-inquiries --local --file=./migrations/0001_init.sql && wrangler d1 execute northgo-inquiries --local --file=./migrations/0002_users.sql",
+    "db:remote": "wrangler d1 execute northgo-inquiries --remote --file=./migrations/0001_init.sql && wrangler d1 execute northgo-inquiries --remote --file=./migrations/0002_users.sql",
+    "db:users": "wrangler d1 execute northgo-inquiries --remote --file=./migrations/0002_users.sql",
     "deploy": "npm run prepare:dist && wrangler pages deploy dist --project-name=northgo",
     "hash-password": "node server/hash-password.mjs"
   },

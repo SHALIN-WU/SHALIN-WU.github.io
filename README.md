@@ -79,3 +79,11 @@ Serves `site/` + `admin/` with a JSON file store under `data/` (not D1).
 
 - Login: `/admin/login.html`
 - Manage enquiries: `/admin/`
+- Manage users (admin role): `/admin/users.html`
+
+Roles:
+
+- `admin` — enquiry CRUD + user CRUD
+- `staff` — enquiry CRUD only
+
+First login with the env bootstrap credentials (`ADMIN_USERNAME` / `ADMIN_PASSWORD`) seeds the first admin user into D1 when the users table is empty.

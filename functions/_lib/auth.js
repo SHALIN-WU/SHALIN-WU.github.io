@@ -1,8 +1,9 @@
 import { parseCookies } from "./http.js";
+import { hashPassword, timingSafeEqual, verifyPassword } from "./password.js";
+import { countUsers, createUser, getUserByUsername, touchLastLogin } from "./users.js";
 
 const COOKIE_NAME = "ng_admin_session";
 const MAX_AGE_MS = 1000 * 60 * 60 * 12;
-const PBKDF2_ITERATIONS = 100000;
 
 function envValue(env, name, fallback = "") {
   const value = env?.[name];
@@ -22,63 +23,6 @@ export function getAuthConfig(env) {
 
 function bytesToHex(bytes) {
   return [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-function hexToBytes(hex) {
-  const clean = String(hex || "");
-  const out = new Uint8Array(clean.length / 2);
-  for (let i = 0; i < out.length; i++) out[i] = parseInt(clean.slice(i * 2, i * 2 + 2), 16);
-  return out;
-}
-
-function timingSafeEqual(a, b) {
-  const left = a instanceof Uint8Array ? a : new TextEncoder().encode(String(a));
-  const right = b instanceof Uint8Array ? b : new TextEncoder().encode(String(b));
-  if (left.length !== right.length) return false;
-  let diff = 0;
-  for (let i = 0; i < left.length; i++) diff |= left[i] ^ right[i];
-  return diff === 0;
-}
-
-async function pbkdf2Hex(password, saltHex, iterations = PBKDF2_ITERATIONS) {
-  const keyMaterial = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(String(password)),
-    "PBKDF2",
-    false,
-    ["deriveBits"]
-  );
-  const bits = await crypto.subtle.deriveBits(
-    {
-      name: "PBKDF2",
-      hash: "SHA-256",
-      salt: hexToBytes(saltHex),
-      iterations
-    },
-    keyMaterial,
-    256
-  );
-  return bytesToHex(new Uint8Array(bits));
-}
-
-export async function hashPassword(password) {
-  const salt = bytesToHex(crypto.getRandomValues(new Uint8Array(16)));
-  const hash = await pbkdf2Hex(password, salt);
-  return `pbkdf2$${PBKDF2_ITERATIONS}$${salt}$${hash}`;
-}
-
-export async function verifyPassword(password, stored) {
-  if (!stored) return false;
-  if (stored.startsWith("pbkdf2$")) {
-    const parts = stored.split("$");
-    if (parts.length !== 4) return false;
-    const iterations = Number(parts[1]);
-    const salt = parts[2];
-    const expected = parts[3];
-    const actual = await pbkdf2Hex(password, salt, iterations);
-    return timingSafeEqual(actual, expected);
-  }
-  return timingSafeEqual(String(password), String(stored));
 }
 
 async function sign(payload, secret) {
@@ -115,10 +59,23 @@ function decodeJson(value) {
   return JSON.parse(new TextDecoder().decode(base64UrlToBytes(value)));
 }
 
-export async function createSessionCookie(env) {
+function serializeCookie(name, value, options) {
+  const parts = [`${name}=${encodeURIComponent(value)}`];
+  if (options.path) parts.push(`Path=${options.path}`);
+  if (options.maxAge != null) parts.push(`Max-Age=${Math.floor(options.maxAge / 1000)}`);
+  if (options.httpOnly) parts.push("HttpOnly");
+  if (options.secure) parts.push("Secure");
+  if (options.sameSite) parts.push(`SameSite=${options.sameSite}`);
+  return parts.join("; ");
+}
+
+export async function createSessionCookie(env, user) {
   const config = getAuthConfig(env);
   const body = encodeJson({
-    u: config.username,
+    id: user.id,
+    u: user.username,
+    name: user.displayName || user.username,
+    role: user.role || "staff",
     iat: Date.now(),
     exp: Date.now() + MAX_AGE_MS,
     n: bytesToHex(crypto.getRandomValues(new Uint8Array(8)))
@@ -144,16 +101,6 @@ export function clearSessionCookie(env) {
   });
 }
 
-function serializeCookie(name, value, options) {
-  const parts = [`${name}=${encodeURIComponent(value)}`];
-  if (options.path) parts.push(`Path=${options.path}`);
-  if (options.maxAge != null) parts.push(`Max-Age=${Math.floor(options.maxAge / 1000)}`);
-  if (options.httpOnly) parts.push("HttpOnly");
-  if (options.secure) parts.push("Secure");
-  if (options.sameSite) parts.push(`SameSite=${options.sameSite}`);
-  return parts.join("; ");
-}
-
 export async function readSession(request, env) {
   const config = getAuthConfig(env);
   const cookies = parseCookies(request.headers.get("Cookie"));
@@ -166,13 +113,18 @@ export async function readSession(request, env) {
   try {
     const data = decodeJson(body);
     if (!data?.u || !data?.exp || Date.now() > Number(data.exp)) return null;
-    return data;
+    return {
+      id: data.id || null,
+      username: data.u,
+      displayName: data.name || data.u,
+      role: data.role || "staff"
+    };
   } catch {
     return null;
   }
 }
 
-export async function verifyCredentials(env, username, password) {
+async function verifyEnvBootstrap(env, username, password) {
   const config = getAuthConfig(env);
   const userOk = timingSafeEqual(String(username || ""), config.username);
   if (!userOk) {
@@ -183,6 +135,66 @@ export async function verifyCredentials(env, username, password) {
   return verifyPassword(password, config.password);
 }
 
+export async function authenticateUser(env, username, password) {
+  const normalized = String(username || "").trim().toLowerCase();
+  if (!normalized || !password) return null;
+
+  if (env.DB) {
+    const existing = await getUserByUsername(env.DB, normalized);
+    if (existing) {
+      if (!existing.active) return null;
+      const ok = await verifyPassword(password, existing.passwordHash);
+      if (!ok) return null;
+      await touchLastLogin(env.DB, existing.id);
+      return {
+        id: existing.id,
+        username: existing.username,
+        displayName: existing.displayName,
+        role: existing.role
+      };
+    }
+
+    const total = await countUsers(env.DB);
+    if (total === 0) {
+      const bootOk = await verifyEnvBootstrap(env, username, password);
+      if (!bootOk) return null;
+      const created = await createUser(env.DB, {
+        username: getAuthConfig(env).username,
+        displayName: "系統管理員",
+        email: "",
+        role: "admin",
+        password,
+        active: true
+      });
+      await touchLastLogin(env.DB, created.id);
+      return {
+        id: created.id,
+        username: created.username,
+        displayName: created.displayName,
+        role: created.role
+      };
+    }
+    return null;
+  }
+
+  const bootOk = await verifyEnvBootstrap(env, username, password);
+  if (!bootOk) return null;
+  const config = getAuthConfig(env);
+  return {
+    id: "env-admin",
+    username: config.username,
+    displayName: "系統管理員",
+    role: "admin"
+  };
+}
+
 export async function requireAdmin(request, env) {
   return readSession(request, env);
 }
+
+export function requireRole(session, roles = ["admin"]) {
+  if (!session) return false;
+  return roles.includes(session.role);
+}
+
+export { hashPassword, verifyPassword };

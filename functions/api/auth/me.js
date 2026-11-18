@@ -4,5 +4,11 @@ import { json } from "../../_lib/http.js";
 export async function onRequestGet(context) {
   const session = await requireAdmin(context.request, context.env);
   if (!session) return json({ authenticated: false }, 401);
-  return json({ authenticated: true, username: session.u });
+  return json({
+    authenticated: true,
+    id: session.id,
+    username: session.username,
+    displayName: session.displayName,
+    role: session.role
+  });
 }

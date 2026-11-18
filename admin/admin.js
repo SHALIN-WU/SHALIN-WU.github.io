@@ -1,4 +1,5 @@
 (function () {
+  var S = window.AdminShared;
   var STATUS_LABELS = {
     all: "全部",
     new: "新詢價",
@@ -9,7 +10,6 @@
   };
 
   var state = {
-    username: "",
     status: "all",
     office: "",
     q: "",
@@ -17,7 +17,7 @@
     counts: {},
     selectedId: null,
     selected: null,
-    mode: "view", // view | edit | create
+    mode: "view",
     meta: { offices: [], services: [], locales: [], statuses: [] }
   };
 
@@ -28,56 +28,7 @@
   var searchInput = document.getElementById("search-input");
   var officeFilter = document.getElementById("office-filter");
   var refreshBtn = document.getElementById("refresh-btn");
-  var logoutBtn = document.getElementById("logout-btn");
   var createBtn = document.getElementById("create-btn");
-  var adminUser = document.getElementById("admin-user");
-  var toastEl = document.getElementById("toast");
-
-  function esc(value) {
-    return String(value ?? "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
-  }
-
-  function formatDate(value) {
-    if (!value) return "—";
-    var date = new Date(value);
-    if (Number.isNaN(date.getTime())) return value;
-    return date.toLocaleString("zh-TW", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit"
-    });
-  }
-
-  function toast(message, isError) {
-    toastEl.hidden = false;
-    toastEl.textContent = message;
-    toastEl.classList.toggle("is-error", Boolean(isError));
-    clearTimeout(toast._timer);
-    toast._timer = setTimeout(function () { toastEl.hidden = true; }, 2600);
-  }
-
-  async function api(url, options) {
-    var response = await fetch(url, Object.assign({ credentials: "same-origin" }, options || {}));
-    if (response.status === 401) {
-      location.replace("/admin/login.html");
-      throw new Error("unauthorized");
-    }
-    var payload = null;
-    var text = await response.text();
-    if (text) {
-      try { payload = JSON.parse(text); } catch (_) { payload = { error: text }; }
-    }
-    if (!response.ok) {
-      throw new Error((payload && payload.error) || "Request failed");
-    }
-    return payload;
-  }
 
   function emptyForm() {
     return {
@@ -108,22 +59,22 @@
     return items.map(function (item) {
       var value = item[valueKey];
       var label = item[labelKey];
-      return '<option value="' + esc(value) + '"' + (value === selected ? " selected" : "") + ">" + esc(label) + "</option>";
+      return '<option value="' + S.esc(value) + '"' + (value === selected ? " selected" : "") + ">" + S.esc(label) + "</option>";
     }).join("");
   }
 
   function statusOptions(selected) {
     return state.meta.statuses.map(function (status) {
-      return '<option value="' + esc(status) + '"' + (status === selected ? " selected" : "") + ">" +
-        esc(STATUS_LABELS[status] || status) + "</option>";
+      return '<option value="' + S.esc(status) + '"' + (status === selected ? " selected" : "") + ">" +
+        S.esc(STATUS_LABELS[status] || status) + "</option>";
     }).join("");
   }
 
   function formField(name, label, value, attrs) {
     return (
       '<label class="field">' +
-        "<span>" + esc(label) + "</span>" +
-        '<input name="' + esc(name) + '" value="' + esc(value || "") + '" ' + (attrs || "") + ">" +
+        "<span>" + S.esc(label) + "</span>" +
+        '<input name="' + S.esc(name) + '" value="' + S.esc(value || "") + '" ' + (attrs || "") + ">" +
       "</label>"
     );
   }
@@ -136,17 +87,17 @@
 
     return (
       '<form id="inquiry-form" class="inquiry-form" novalidate>' +
-        "<h2>" + esc(title) + "</h2>" +
+        "<h2>" + S.esc(title) + "</h2>" +
         (data.reference
-          ? '<p class="ref">' + esc(data.reference) + (data.createdAt ? " · " + esc(formatDate(data.createdAt)) : "") + "</p>"
+          ? '<p class="ref">' + S.esc(data.reference) + (data.createdAt ? " · " + S.esc(S.formatDate(data.createdAt)) : "") + "</p>"
           : '<p class="ref">後台手動建立</p>') +
         '<div class="form-grid">' +
           formField("first", "名字 *", data.first, "required autocomplete=\"given-name\"") +
           formField("last", "姓氏 *", data.last, "required autocomplete=\"family-name\"") +
-          '<label class="field span-2"><span>公司 *</span><input name="company" value="' + esc(data.company || "") + '" required></label>' +
+          '<label class="field span-2"><span>公司 *</span><input name="company" value="' + S.esc(data.company || "") + '" required></label>' +
           formField("email", "Email *", data.email, "type=\"email\" required") +
           formField("phone", "電話 *", data.phone, "required") +
-          '<label class="field span-2"><span>國家 *</span><input name="country" value="' + esc(data.country || "") + '" required></label>' +
+          '<label class="field span-2"><span>國家 *</span><input name="country" value="' + S.esc(data.country || "") + '" required></label>' +
           '<label class="field"><span>服務 *</span><select name="service" required>' + serviceOptions + "</select></label>" +
           formField("cargo", "貨型 *", data.cargo, "required") +
           '<label class="field"><span>辦公室 *</span><select name="office" required>' + officeOptions + "</select></label>" +
@@ -158,15 +109,13 @@
           formField("volume", "體積 (cbm)", data.volume, "") +
           formField("ready", "可出貨日 *", data.ready, "type=\"date\" required") +
           '<label class="field"><span>狀態</span><select name="status">' + statusOptions(data.status || "new") + "</select></label>" +
-          '<label class="field span-2"><span>補充說明</span><textarea name="message">' + esc(data.message || "") + "</textarea></label>" +
-          '<label class="field span-2"><span>內部備註</span><textarea name="notes">' + esc(data.notes || "") + "</textarea></label>" +
+          '<label class="field span-2"><span>補充說明</span><textarea name="message">' + S.esc(data.message || "") + "</textarea></label>" +
+          '<label class="field span-2"><span>內部備註</span><textarea name="notes">' + S.esc(data.notes || "") + "</textarea></label>" +
         "</div>" +
         '<div class="detail-actions">' +
           '<button class="btn" type="submit">' + (mode === "create" ? "建立" : "儲存") + "</button>" +
           '<button class="btn ghost" type="button" id="cancel-form-btn">取消</button>' +
-          (mode === "edit"
-            ? '<button class="btn danger" type="button" id="delete-btn">刪除</button>'
-            : "") +
+          (mode === "edit" ? '<button class="btn danger" type="button" id="delete-btn">刪除</button>' : "") +
         "</div>" +
       "</form>"
     );
@@ -175,11 +124,11 @@
   function renderReadonly(item) {
     function row(label, value) {
       if (!value) return "";
-      return "<dt>" + esc(label) + "</dt><dd>" + esc(value) + "</dd>";
+      return "<dt>" + S.esc(label) + "</dt><dd>" + S.esc(value) + "</dd>";
     }
     return (
-      "<h2>" + esc(item.first + " " + item.last) + "</h2>" +
-      '<p class="ref">' + esc(item.reference) + " · " + esc(formatDate(item.createdAt)) + "</p>" +
+      "<h2>" + S.esc(item.first + " " + item.last) + "</h2>" +
+      '<p class="ref">' + S.esc(item.reference) + " · " + S.esc(S.formatDate(item.createdAt)) + "</p>" +
       '<dl class="kv">' +
         row("公司", item.company) +
         row("Email", item.email) +
@@ -199,11 +148,11 @@
         row("狀態", STATUS_LABELS[item.status] || item.status) +
         row("補充說明", item.message) +
         row("內部備註", item.notes) +
-        row("更新時間", formatDate(item.updatedAt)) +
+        row("更新時間", S.formatDate(item.updatedAt)) +
       "</dl>" +
       '<div class="detail-actions">' +
         '<button class="btn" type="button" id="edit-btn">編輯</button>' +
-        '<a class="btn ghost" href="mailto:' + esc(item.email) +
+        '<a class="btn ghost" href="mailto:' + S.esc(item.email) +
           "?subject=" + encodeURIComponent("Re: Northgo " + item.reference) + '">回信客戶</a>' +
         '<button class="btn danger" type="button" id="delete-btn">刪除</button>' +
       "</div>"
@@ -216,7 +165,7 @@
       form.addEventListener("submit", function (event) {
         event.preventDefault();
         saveForm(form).catch(function (error) {
-          if (error.message !== "unauthorized") toast(error.message, true);
+          if (error.message !== "unauthorized") S.toast(error.message, true);
         });
       });
     }
@@ -245,7 +194,7 @@
     if (deleteBtn) {
       deleteBtn.addEventListener("click", function () {
         deleteSelected().catch(function (error) {
-          if (error.message !== "unauthorized") toast(error.message, true);
+          if (error.message !== "unauthorized") S.toast(error.message, true);
         });
       });
     }
@@ -279,12 +228,12 @@
   async function saveForm(form) {
     var payload = readForm(form);
     if (state.mode === "create") {
-      var created = await api("/api/inquiries", {
+      var created = await S.api("/api/inquiries", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
-      toast("已建立詢價 " + (created.reference || ""));
+      S.toast("已建立詢價 " + (created.reference || ""));
       state.selectedId = created.id;
       state.selected = created.item || null;
       state.mode = "view";
@@ -293,29 +242,23 @@
       return;
     }
 
-    var updated = await api("/api/inquiries/" + encodeURIComponent(state.selected.id), {
+    var updated = await S.api("/api/inquiries/" + encodeURIComponent(state.selected.id), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
-    toast("已儲存變更");
+    S.toast("已儲存變更");
     state.selected = updated.item;
     state.selectedId = updated.item.id;
     state.mode = "view";
     await loadList();
   }
 
-  async function ensureAuth() {
-    var me = await api("/api/auth/me");
-    state.username = me.username || "";
-    adminUser.textContent = state.username;
-  }
-
   async function loadMeta() {
-    state.meta = await api("/api/meta");
+    state.meta = await S.api("/api/meta");
     officeFilter.innerHTML = '<option value="">全部辦公室</option>' +
       state.meta.offices.map(function (office) {
-        return '<option value="' + esc(office.id) + '">' + esc(office.name) + "</option>";
+        return '<option value="' + S.esc(office.id) + '">' + S.esc(office.name) + "</option>";
       }).join("");
     officeFilter.value = state.office;
   }
@@ -327,8 +270,8 @@
       return (
         '<article class="stat' + active + '">' +
           '<button type="button" data-status="' + key + '">' +
-            '<div class="label">' + esc(STATUS_LABELS[key]) + "</div>" +
-            '<div class="value">' + esc(state.counts[key] || 0) + "</div>" +
+            '<div class="label">' + S.esc(STATUS_LABELS[key]) + "</div>" +
+            '<div class="value">' + S.esc(state.counts[key] || 0) + "</div>" +
           "</button>" +
         "</article>"
       );
@@ -343,15 +286,15 @@
     listEl.innerHTML = state.items.map(function (item) {
       var selected = item.id === state.selectedId ? " is-selected" : "";
       return (
-        '<button class="row' + selected + '" type="button" data-id="' + esc(item.id) + '">' +
+        '<button class="row' + selected + '" type="button" data-id="' + S.esc(item.id) + '">' +
           '<div class="row-top">' +
-            '<span class="row-title">' + esc(item.company || (item.first + " " + item.last)) + "</span>" +
-            '<span class="badge ' + esc(item.status) + '">' + esc(STATUS_LABELS[item.status] || item.status) + "</span>" +
+            '<span class="row-title">' + S.esc(item.company || (item.first + " " + item.last)) + "</span>" +
+            '<span class="badge ' + S.esc(item.status) + '">' + S.esc(STATUS_LABELS[item.status] || item.status) + "</span>" +
           "</div>" +
-          '<div class="row-sub">' + esc(item.serviceLabel || item.service) + " · " + esc(item.officeName || item.office) + "</div>" +
+          '<div class="row-sub">' + S.esc(item.serviceLabel || item.service) + " · " + S.esc(item.officeName || item.office) + "</div>" +
           '<div class="meta">' +
-            "<span>" + esc(item.reference) + "</span>" +
-            "<span>" + esc(formatDate(item.createdAt)) + "</span>" +
+            "<span>" + S.esc(item.reference) + "</span>" +
+            "<span>" + S.esc(S.formatDate(item.createdAt)) + "</span>" +
           "</div>" +
         "</button>"
       );
@@ -386,7 +329,7 @@
     if (state.office) params.set("office", state.office);
     if (state.q) params.set("q", state.q);
     params.set("limit", "200");
-    var data = await api("/api/inquiries?" + params.toString());
+    var data = await S.api("/api/inquiries?" + params.toString());
     state.items = data.items || [];
     state.counts = data.counts || {};
     if (state.selectedId && state.mode !== "create") {
@@ -408,7 +351,7 @@
     state.selected = state.items.find(function (item) { return item.id === id; }) || null;
     renderList();
     if (!state.selected) {
-      var data = await api("/api/inquiries/" + encodeURIComponent(id));
+      var data = await S.api("/api/inquiries/" + encodeURIComponent(id));
       state.selected = data.item;
     }
     renderDetail();
@@ -417,8 +360,8 @@
   async function deleteSelected() {
     if (!state.selected) return;
     if (!window.confirm("確定刪除這筆詢價？此動作無法復原。")) return;
-    await api("/api/inquiries/" + encodeURIComponent(state.selected.id), { method: "DELETE" });
-    toast("已刪除");
+    await S.api("/api/inquiries/" + encodeURIComponent(state.selected.id), { method: "DELETE" });
+    S.toast("已刪除");
     state.selected = null;
     state.selectedId = null;
     state.mode = "view";
@@ -439,7 +382,7 @@
     if (!button) return;
     state.status = button.getAttribute("data-status");
     loadList().catch(function (error) {
-      if (error.message !== "unauthorized") toast(error.message, true);
+      if (error.message !== "unauthorized") S.toast(error.message, true);
     });
   });
 
@@ -447,7 +390,7 @@
     var button = event.target.closest("[data-id]");
     if (!button) return;
     selectInquiry(button.getAttribute("data-id")).catch(function (error) {
-      if (error.message !== "unauthorized") toast(error.message, true);
+      if (error.message !== "unauthorized") S.toast(error.message, true);
     });
   });
 
@@ -457,7 +400,7 @@
     searchTimer = setTimeout(function () {
       state.q = searchInput.value.trim();
       loadList().catch(function (error) {
-        if (error.message !== "unauthorized") toast(error.message, true);
+        if (error.message !== "unauthorized") S.toast(error.message, true);
       });
     }, 250);
   });
@@ -465,29 +408,23 @@
   officeFilter.addEventListener("change", function () {
     state.office = officeFilter.value;
     loadList().catch(function (error) {
-      if (error.message !== "unauthorized") toast(error.message, true);
+      if (error.message !== "unauthorized") S.toast(error.message, true);
     });
   });
 
   refreshBtn.addEventListener("click", function () {
     loadList().catch(function (error) {
-      if (error.message !== "unauthorized") toast(error.message, true);
+      if (error.message !== "unauthorized") S.toast(error.message, true);
     });
   });
 
   createBtn.addEventListener("click", startCreate);
+  S.bindLogout();
 
-  logoutBtn.addEventListener("click", async function () {
-    try {
-      await api("/api/auth/logout", { method: "POST" });
-    } catch (_) {}
-    location.replace("/admin/login.html");
-  });
-
-  ensureAuth()
+  S.ensureAuth()
     .then(loadMeta)
     .then(loadList)
     .catch(function (error) {
-      if (error.message !== "unauthorized") toast(error.message || "無法載入後台", true);
+      if (error.message !== "unauthorized") S.toast(error.message || "無法載入後台", true);
     });
 })();

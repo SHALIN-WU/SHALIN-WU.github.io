@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>使用者管理｜Northgo</title>
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin/admin.css">
+</head>
+<body>
+  <div class="admin-app">
+    <aside class="sidebar">
+      <a class="sidebar-brand" href="/admin/">
+        <img src="/assets/logo-on-dark.svg" alt="Northgo" width="168" height="33">
+      </a>
+      <nav class="side-nav" aria-label="後台選單">
+        <a href="/admin/">詢價管理</a>
+        <a class="is-active" id="nav-users" href="/admin/users.html">使用者管理</a>
+        <a href="/" target="_blank" rel="noopener">前台網站</a>
+      </nav>
+      <div class="sidebar-foot">
+        <div class="avatar" id="admin-avatar">NG</div>
+        <div>
+          <strong id="admin-user"></strong>
+          <span id="admin-role"></span>
+        </div>
+      </div>
+    </aside>
+
+    <div class="workspace">
+      <header class="hero-band hero-band-users">
+        <img src="/assets/freight-hero.jpg" alt="" width="1280" height="720">
+        <div class="hero-band-copy">
+          <p class="eyebrow">Team Access</p>
+          <h1>使用者管理</h1>
+          <p>新增管理員與專員，分配角色並維護登入權限。</p>
+        </div>
+      </header>
+
+      <div class="top-actions-bar">
+        <button class="btn" type="button" id="create-user-btn">新增使用者</button>
+        <button class="btn ghost" type="button" id="refresh-users-btn">重新整理</button>
+        <button class="btn ghost" type="button" id="logout-btn">登出</button>
+      </div>
+
+      <main class="main">
+        <section class="stats" id="user-stats" aria-label="使用者統計"></section>
+        <section class="panel users-panel">
+          <div class="layout">
+            <div class="list" id="user-list" aria-label="使用者列表"></div>
+            <div class="detail" id="user-detail">
+              <p class="detail-empty" id="user-empty">選擇一位使用者以檢視與編輯，或新增帳號。</p>
+              <div id="user-body" hidden></div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+  <script src="/admin/shared.js"></script>
+  <script src="/admin/users.js"></script>
+</body>
+</html>
