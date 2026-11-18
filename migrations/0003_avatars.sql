@@ -1,0 +1,2 @@
+ALTER TABLE admin_users ADD COLUMN avatar_data TEXT NOT NULL DEFAULT '';
+ALTER TABLE admin_users ADD COLUMN avatar_mime TEXT NOT NULL DEFAULT '';

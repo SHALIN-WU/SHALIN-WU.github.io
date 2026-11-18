@@ -5,7 +5,9 @@
     items: [],
     selectedId: null,
     selected: null,
-    mode: "view"
+    mode: "view",
+    pendingAvatar: null,
+    removeAvatar: false
   };
 
   var listEl = document.getElementById("user-list");
@@ -20,8 +22,39 @@
       email: "",
       role: "staff",
       active: true,
-      password: ""
+      password: "",
+      avatarUrl: null,
+      hasAvatar: false
     };
+  }
+
+  function previewSrc(user) {
+    if (state.pendingAvatar) return state.pendingAvatar;
+    if (state.removeAvatar) return null;
+    return user && user.avatarUrl ? user.avatarUrl : null;
+  }
+
+  function avatarEditor(user) {
+    var src = previewSrc(user);
+    var media = src
+      ? '<span class="avatar large has-image"><img src="' + S.esc(src) + '" alt=""></span>'
+      : '<span class="avatar large">' + S.esc(S.initials(user.displayName || user.username || "?")) + "</span>";
+
+    return (
+      '<div class="avatar-editor">' +
+        '<div class="avatar-preview">' + media +
+          '<button class="avatar-edit-btn" type="button" id="pick-avatar-btn" title="更換頭像">編輯</button>' +
+        "</div>" +
+        '<div class="avatar-actions">' +
+          '<button class="btn ghost" type="button" id="pick-avatar-btn-2">上傳圖片</button>' +
+          ((src || (user && user.hasAvatar)) && !state.removeAvatar
+            ? '<button class="btn ghost" type="button" id="clear-avatar-btn">移除頭像</button>'
+            : "") +
+          '<p class="avatar-hint">建議正方形照片，系統會自動裁切為 256×256。</p>' +
+        "</div>" +
+        '<input id="avatar-file" type="file" accept="image/jpeg,image/png,image/webp" hidden>' +
+      "</div>"
+    );
   }
 
   function renderStats() {
@@ -49,7 +82,7 @@
       return (
         '<button class="row user-row' + selected + '" type="button" data-id="' + S.esc(user.id) + '">' +
           '<div class="row-top">' +
-            '<span class="avatar tiny">' + S.esc(S.initials(user.displayName || user.username)) + "</span>" +
+            S.avatarHtml(user, "tiny") +
             '<span class="row-title">' + S.esc(user.displayName || user.username) + "</span>" +
             '<span class="badge ' + (user.active ? "quoted" : "closed") + '">' + (user.active ? "啟用" : "停用") + "</span>" +
           "</div>" +
@@ -65,6 +98,7 @@
       '<form id="user-form" class="inquiry-form" novalidate>' +
         "<h2>" + (mode === "create" ? "新增使用者" : "編輯使用者") + "</h2>" +
         '<p class="ref">' + (mode === "create" ? "建立後即可登入後台" : "@" + S.esc(data.username)) + "</p>" +
+        avatarEditor(data) +
         '<div class="form-grid">' +
           (mode === "create"
             ? '<label class="field"><span>帳號 *</span><input name="username" required pattern="[a-zA-Z0-9._-]{3,32}" value="' + S.esc(data.username || "") + '"></label>'
@@ -94,7 +128,7 @@
   function renderReadonly(user) {
     return (
       '<div class="user-profile">' +
-        '<div class="avatar large">' + S.esc(S.initials(user.displayName || user.username)) + "</div>" +
+        S.avatarHtml(user, "large") +
         "<h2>" + S.esc(user.displayName || user.username) + "</h2>" +
         '<p class="ref">@' + S.esc(user.username) + " · " + S.esc(S.ROLE_LABELS[user.role] || user.role) + "</p>" +
       "</div>" +
@@ -111,7 +145,45 @@
     );
   }
 
+  function bindAvatarPicker() {
+    var fileInput = document.getElementById("avatar-file");
+    function openPicker() {
+      if (fileInput) fileInput.click();
+    }
+    var pick1 = document.getElementById("pick-avatar-btn");
+    var pick2 = document.getElementById("pick-avatar-btn-2");
+    if (pick1) pick1.addEventListener("click", openPicker);
+    if (pick2) pick2.addEventListener("click", openPicker);
+    var clearBtn = document.getElementById("clear-avatar-btn");
+    if (clearBtn) {
+      clearBtn.addEventListener("click", function () {
+        state.pendingAvatar = null;
+        state.removeAvatar = true;
+        renderDetail();
+      });
+    }
+    if (fileInput) {
+      fileInput.addEventListener("change", function () {
+        var file = fileInput.files && fileInput.files[0];
+        if (!file) return;
+        S.resizeImageFile(file, 256)
+          .then(function (dataUrl) {
+            state.pendingAvatar = dataUrl;
+            state.removeAvatar = false;
+            renderDetail();
+          })
+          .catch(function (error) {
+            S.toast(error.message || "無法處理圖片", true);
+          })
+          .finally(function () {
+            fileInput.value = "";
+          });
+      });
+    }
+  }
+
   function bindDetail() {
+    bindAvatarPicker();
     var form = document.getElementById("user-form");
     if (form) {
       form.addEventListener("submit", function (event) {
@@ -124,7 +196,9 @@
     var cancelBtn = document.getElementById("cancel-user-btn");
     if (cancelBtn) {
       cancelBtn.addEventListener("click", function () {
-        state.mode = state.selected ? "view" : "view";
+        state.pendingAvatar = null;
+        state.removeAvatar = false;
+        state.mode = "view";
         if (!state.selected) state.selectedId = null;
         renderDetail();
         renderList();
@@ -133,6 +207,8 @@
     var editBtn = document.getElementById("edit-user-btn");
     if (editBtn) {
       editBtn.addEventListener("click", function () {
+        state.pendingAvatar = null;
+        state.removeAvatar = false;
         state.mode = "edit";
         renderDetail();
       });
@@ -168,6 +244,24 @@
     bindDetail();
   }
 
+  async function syncAvatar(userId) {
+    if (state.pendingAvatar) {
+      var updated = await S.api("/api/users/" + encodeURIComponent(userId) + "/avatar", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ avatarData: state.pendingAvatar })
+      });
+      return updated.item;
+    }
+    if (state.removeAvatar) {
+      var cleared = await S.api("/api/users/" + encodeURIComponent(userId) + "/avatar", {
+        method: "DELETE"
+      });
+      return cleared.item;
+    }
+    return null;
+  }
+
   async function loadUsers() {
     var data = await S.api("/api/users");
     state.items = data.items || [];
@@ -186,6 +280,8 @@
   async function selectUser(id) {
     state.selectedId = id;
     state.mode = "view";
+    state.pendingAvatar = null;
+    state.removeAvatar = false;
     state.selected = state.items.find(function (item) { return item.id === id; }) || null;
     renderList();
     renderDetail();
@@ -203,6 +299,7 @@
 
     if (state.mode === "create") {
       payload.username = String(data.get("username") || "").trim().toLowerCase();
+      if (state.pendingAvatar) payload.avatarData = state.pendingAvatar;
       var created = await S.api("/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -211,6 +308,8 @@
       S.toast("已建立使用者");
       state.selectedId = created.item.id;
       state.selected = created.item;
+      state.pendingAvatar = null;
+      state.removeAvatar = false;
       state.mode = "view";
       await loadUsers();
       return;
@@ -222,11 +321,17 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
+    var withAvatar = await syncAvatar(state.selected.id);
     S.toast("已儲存使用者");
-    state.selected = updated.item;
-    state.selectedId = updated.item.id;
+    state.selected = withAvatar || updated.item;
+    state.selectedId = state.selected.id;
+    state.pendingAvatar = null;
+    state.removeAvatar = false;
     state.mode = "view";
     await loadUsers();
+    if (state.me && state.me.id === state.selected.id) {
+      await S.ensureAuth();
+    }
   }
 
   async function deleteSelected() {
@@ -236,6 +341,8 @@
     S.toast("已刪除使用者");
     state.selected = null;
     state.selectedId = null;
+    state.pendingAvatar = null;
+    state.removeAvatar = false;
     state.mode = "view";
     await loadUsers();
   }
@@ -250,6 +357,8 @@
     state.mode = "create";
     state.selected = null;
     state.selectedId = null;
+    state.pendingAvatar = null;
+    state.removeAvatar = false;
     renderList();
     renderDetail();
   });

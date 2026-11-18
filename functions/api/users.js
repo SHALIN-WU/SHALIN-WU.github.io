@@ -18,10 +18,13 @@ function validateUserInput(body, { requirePassword = true } = {}) {
   if (requirePassword && password.length < 8) errors.push("密碼至少 8 碼");
   if (!requirePassword && password && password.length < 8) errors.push("密碼至少 8 碼");
 
+  const data = { username, displayName, email, role, password, active };
+  if (body?.avatarData) data.avatarData = String(body.avatarData);
+
   return {
     ok: errors.length === 0,
     errors,
-    data: { username, displayName, email, role, password, active }
+    data
   };
 }
 

@@ -1,20 +1,29 @@
 import { hashPassword } from "./password.js";
+import { parseDataUrl } from "./avatar.js";
 
 export const ROLES = ["admin", "staff"];
 
-function mapUser(row) {
+function mapUser(row, { includeAvatarData = false } = {}) {
   if (!row) return null;
-  return {
+  const hasAvatar = Number(row.has_avatar) === 1 || Boolean(row.avatar_data);
+  const user = {
     id: row.id,
     username: row.username,
     displayName: row.display_name,
     email: row.email || "",
     role: row.role,
     active: Number(row.active) === 1,
+    hasAvatar,
+    avatarUrl: hasAvatar ? `/api/users/${row.id}/avatar?v=${encodeURIComponent(row.updated_at || "")}` : null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     lastLoginAt: row.last_login_at || null
   };
+  if (includeAvatarData) {
+    user.avatarData = row.avatar_data || "";
+    user.avatarMime = row.avatar_mime || "";
+  }
+  return user;
 }
 
 export async function countUsers(db) {
@@ -24,14 +33,16 @@ export async function countUsers(db) {
 
 export async function listUsers(db) {
   const result = await db
-    .prepare("SELECT * FROM admin_users ORDER BY created_at ASC")
+    .prepare(`SELECT id, username, display_name, email, role, active, created_at, updated_at, last_login_at,
+      CASE WHEN avatar_data != '' THEN 1 ELSE 0 END AS has_avatar
+      FROM admin_users ORDER BY created_at ASC`)
     .all();
-  return (result.results || []).map(mapUser);
+  return (result.results || []).map((row) => mapUser(row));
 }
 
-export async function getUserById(db, id) {
+export async function getUserById(db, id, options) {
   const row = await db.prepare("SELECT * FROM admin_users WHERE id = ?").bind(id).first();
-  return mapUser(row);
+  return mapUser(row, options);
 }
 
 export async function getUserByUsername(db, username) {
@@ -46,10 +57,18 @@ export async function createUser(db, input) {
   const now = new Date().toISOString();
   const id = crypto.randomUUID();
   const passwordHash = input.passwordHash || (await hashPassword(input.password));
+  let avatarData = "";
+  let avatarMime = "";
+  if (input.avatarData) {
+    const parsed = parseDataUrl(input.avatarData);
+    avatarData = parsed.base64;
+    avatarMime = parsed.mime;
+  }
+
   await db
     .prepare(`INSERT INTO admin_users (
-      id, username, display_name, email, role, password_hash, active, created_at, updated_at, last_login_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)`)
+      id, username, display_name, email, role, password_hash, active, created_at, updated_at, last_login_at, avatar_data, avatar_mime
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?)`)
     .bind(
       id,
       String(input.username).trim().toLowerCase(),
@@ -59,14 +78,16 @@ export async function createUser(db, input) {
       passwordHash,
       input.active === false ? 0 : 1,
       now,
-      now
+      now,
+      avatarData,
+      avatarMime
     )
     .run();
   return getUserById(db, id);
 }
 
 export async function updateUser(db, id, patch = {}) {
-  const current = await getUserById(db, id);
+  const current = await getUserById(db, id, { includeAvatarData: true });
   if (!current) return null;
 
   const next = {
@@ -101,6 +122,42 @@ export async function updateUser(db, id, patch = {}) {
   }
 
   return getUserById(db, id);
+}
+
+export async function setUserAvatar(db, id, dataUrl) {
+  const current = await getUserById(db, id);
+  if (!current) return null;
+  const parsed = parseDataUrl(dataUrl);
+  const now = new Date().toISOString();
+  await db
+    .prepare("UPDATE admin_users SET avatar_data = ?, avatar_mime = ?, updated_at = ? WHERE id = ?")
+    .bind(parsed.base64, parsed.mime, now, id)
+    .run();
+  return getUserById(db, id);
+}
+
+export async function clearUserAvatar(db, id) {
+  const current = await getUserById(db, id);
+  if (!current) return null;
+  const now = new Date().toISOString();
+  await db
+    .prepare("UPDATE admin_users SET avatar_data = '', avatar_mime = '', updated_at = ? WHERE id = ?")
+    .bind(now, id)
+    .run();
+  return getUserById(db, id);
+}
+
+export async function getUserAvatarBinary(db, id) {
+  const row = await db
+    .prepare("SELECT avatar_data, avatar_mime, updated_at FROM admin_users WHERE id = ?")
+    .bind(id)
+    .first();
+  if (!row || !row.avatar_data) return null;
+  return {
+    mime: row.avatar_mime || "image/jpeg",
+    base64: row.avatar_data,
+    updatedAt: row.updated_at || ""
+  };
 }
 
 export async function deleteUser(db, id) {
