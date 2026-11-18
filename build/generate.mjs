@@ -9,7 +9,7 @@ import { ui, countries, home, about, legal, servicesIndex, locationsCopy, contac
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SITE = "https://www.northgo.com";
 const DATE = "2026-11-11";
-const VERSION = "v1";
+const VERSION = "v2";
 const OG = "https://cdn.prod.website-files.com/66fc7398f8b5d731b52bcefb/670eea7be3b8c90fbb9dd350_NG_Planes-Duotone-p-500.webp";
 
 const htmlLang = { en: "en", "zh-tw": "zh-Hant", ja: "ja", vi: "vi" };
@@ -159,6 +159,23 @@ function pageHero(locale, eyebrow, title, lead, crumbItems) {
   return `<header class="page-hero"><div class="wrap">${crumbs(locale, crumbItems)}<p class="eyebrow">${esc(eyebrow)}</p><h1>${esc(title)}</h1><p class="lead">${esc(lead)}</p></div></header>`;
 }
 
+function freightHero(locale, service, crumbItems) {
+  const modes = ["ocean", "air", "land", "customs"].map((id) =>
+    `<li><a href="${href(locale, byId[id].slug)}">${esc(t(byId[id].title, locale))}</a></li>`
+  ).join("");
+  return `<header class="page-hero page-hero--freight">
+      <img class="page-hero-bg" src="/assets/freight-hero.jpg" alt="" width="1280" height="720" fetchpriority="high" decoding="async">
+      <div class="wrap">
+        ${crumbs(locale, crumbItems)}
+        <p class="eyebrow">${esc(t(service.eyebrow, locale))}</p>
+        <h1>${esc(t(service.title, locale))}</h1>
+        <p class="lead">${esc(t(service.lead, locale))}</p>
+        <ul class="hero-modes">${modes}</ul>
+        <div class="hero-actions"><a class="btn" href="${enquireHref(locale, service.id)}" data-track="service_cta" data-service="${service.id}">${esc(t(ui.enquire, locale))}</a></div>
+      </div>
+    </header>`;
+}
+
 function childLinks(locale, parentId) {
   return services.filter((service) => service.parent === parentId).map((service) =>
     `<a href="${href(locale, service.slug)}">${esc(t(service.title, locale))}</a>`
@@ -227,7 +244,10 @@ function renderService(locale, service) {
     ? `<div class="grid-2">${children.map((item) => `<article class="card"><h3><a href="${href(locale, item.slug)}">${esc(t(item.title, locale))}</a></h3><p>${esc(t(item.lead, locale))}</p></article>`).join("")}</div>`
     : "";
   const kase = serviceCase(service);
-  return `${pageHero(locale, t(service.eyebrow, locale), t(service.title, locale), t(service.lead, locale), crumb)}
+  const hero = service.id === "freight"
+    ? freightHero(locale, service, crumb)
+    : pageHero(locale, t(service.eyebrow, locale), t(service.title, locale), t(service.lead, locale), crumb);
+  return `${hero}
     <section class="section"><div class="wrap"><h2>${esc(t(ui.solves, locale))}</h2><p class="intro">${esc(t(service.solves, locale))}</p>
       <h2>${esc(t(ui.coverage, locale))}</h2>${renderPoints(service.points, locale)}${childBlock}</div></section>
     <section class="section"><div class="wrap">${renderCase(kase, locale, { title: service.title })}</div></section>
