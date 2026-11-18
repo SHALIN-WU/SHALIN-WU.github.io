@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>詢價管理｜Northgo</title>
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin/admin.css">
+</head>
+<body>
+  <div class="admin-shell">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a class="brand-lockup" href="/admin/">
+          <img src="/assets/logo.svg" alt="" width="168" height="33">
+          <strong>詢價後台</strong>
+        </a>
+        <div class="top-actions">
+          <span class="user-chip" id="admin-user"></span>
+          <button class="btn" type="button" id="create-btn">新增詢價</button>
+          <a class="btn ghost" href="/" target="_blank" rel="noopener">前台網站</a>
+          <button class="btn ghost" type="button" id="logout-btn">登出</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="stats" id="stats" aria-label="狀態統計"></section>
+
+      <section class="panel">
+        <div class="toolbar">
+          <input id="search-input" type="search" placeholder="搜尋姓名、公司、編號、路線…">
+          <select id="office-filter">
+            <option value="">全部辦公室</option>
+          </select>
+          <button class="btn ghost" type="button" id="refresh-btn">重新整理</button>
+        </div>
+
+        <div class="layout">
+          <div class="list" id="inquiry-list" aria-label="詢價列表"></div>
+          <div class="detail" id="inquiry-detail">
+            <p class="detail-empty" id="detail-empty">選擇一筆詢價以檢視、編輯，或點「新增詢價」建立資料。</p>
+            <div id="detail-body" hidden></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+  <script src="/admin/admin.js"></script>
+</body>
+</html>

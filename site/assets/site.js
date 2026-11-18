@@ -70,8 +70,10 @@
   var destWrap = document.getElementById("dest-wrap");
   var destLabel = document.getElementById("dest-label-text");
   var destInput = form.querySelector('[name="destination"]');
+  var submitButton = form.querySelector('button[type="submit"]');
   var officeDirty = false;
   var started = false;
+  var submitting = false;
 
   function fillCargo() {
     var key = service.value;
@@ -185,16 +187,8 @@
     return "NG-" + stamp + "-" + tail;
   }
 
-  form.addEventListener("submit", function (event) {
-    event.preventDefault();
-    if (form.querySelector(".hp-field").value) return;
-    if (!validate(step2)) return;
-    var data = new FormData(form);
-    var id = rfqId();
-    var officeOption = office.options[office.selectedIndex];
-    var officeName = officeOption.textContent;
-    var email = officeOption.dataset.email;
-    var lines = [
+  function buildMailBody(data, id, officeName) {
+    return [
       copy.mailIntro + " " + id,
       copy.service + ": " + service.options[service.selectedIndex].textContent,
       copy.cargo + ": " + data.get("cargo"),
@@ -213,18 +207,32 @@
       data.get("country"),
       "",
       data.get("message") || ""
-    ].filter(Boolean);
-    var body = lines.join("\n");
-    var mailto = "mailto:" + email + "?subject=" + encodeURIComponent(copy.subject + " " + id) + "&body=" + encodeURIComponent(body);
+    ].filter(Boolean).join("\n");
+  }
+
+  function showConfirm(title, bodyText, actions) {
     confirm.hidden = false;
     step2.hidden = true;
     kicker.hidden = true;
     confirm.replaceChildren();
     var heading = document.createElement("h2");
-    heading.textContent = copy.readyTitle;
+    heading.textContent = title;
     var paragraph = document.createElement("p");
-    paragraph.textContent = copy.readyBody.replace("{id}", id).replace("{office}", officeName).replace("{email}", email);
+    paragraph.textContent = bodyText;
+    confirm.append(heading, paragraph);
+    if (actions) confirm.append(actions);
+    confirm.scrollIntoView({ block: "start" });
+  }
+
+  function mailtoFallback(data, id, officeName, email, notice) {
+    var body = buildMailBody(data, id, officeName);
+    var mailto = "mailto:" + email + "?subject=" + encodeURIComponent(copy.subject + " " + id) + "&body=" + encodeURIComponent(body);
     var actions = document.createElement("p");
+    if (notice) {
+      var note = document.createElement("p");
+      note.textContent = notice;
+      actions.append(note);
+    }
     var mailLink = document.createElement("a");
     mailLink.className = "btn";
     mailLink.href = mailto;
@@ -238,14 +246,93 @@
       copyButton.textContent = copy.copied;
     });
     actions.append(mailLink, document.createTextNode(" "), copyButton);
-    confirm.append(heading, paragraph, actions);
-    track("rfq_submit", {
+    showConfirm(
+      copy.readyTitle,
+      copy.readyBody.replace("{id}", id).replace("{office}", officeName).replace("{email}", email),
+      actions
+    );
+  }
+
+  form.addEventListener("submit", async function (event) {
+    event.preventDefault();
+    if (submitting) return;
+    if (form.querySelector(".hp-field").value) return;
+    if (!validate(step2)) return;
+
+    var data = new FormData(form);
+    var id = rfqId();
+    var officeOption = office.options[office.selectedIndex];
+    var officeName = officeOption.textContent;
+    var email = officeOption.dataset.email;
+    var payload = {
+      reference: id,
+      locale: copy.locale || document.documentElement.lang || "en",
+      first: data.get("first"),
+      last: data.get("last"),
+      company: data.get("company"),
+      email: data.get("email"),
+      phone: data.get("phone"),
+      country: data.get("country"),
       service: service.value,
+      serviceLabel: service.options[service.selectedIndex].textContent,
+      cargo: data.get("cargo"),
       office: office.value,
-      rfq_id: id,
-      country: data.get("country")
-    });
-    confirm.scrollIntoView({ block: "start" });
+      officeName: officeName,
+      officeEmail: email,
+      origin: data.get("origin"),
+      destination: data.get("destination") || "",
+      pieces: data.get("pieces") || "",
+      weight: data.get("weight") || "",
+      volume: data.get("volume") || "",
+      ready: data.get("ready"),
+      message: data.get("message") || "",
+      company_website: data.get("company_website") || ""
+    };
+
+    submitting = true;
+    var originalLabel = submitButton.textContent;
+    submitButton.disabled = true;
+    submitButton.textContent = copy.submitting || "Sending…";
+
+    try {
+      var response = await fetch("/api/inquiries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok && response.status !== 204) throw new Error("save failed");
+      if (response.status === 204) return;
+
+      var result = await response.json().catch(function () { return {}; });
+      var reference = result.reference || id;
+      showConfirm(
+        copy.submittedTitle || copy.readyTitle,
+        (copy.submittedBody || copy.readyBody)
+          .replace("{id}", reference)
+          .replace("{office}", officeName)
+          .replace("{email}", email)
+      );
+      track("rfq_submit", {
+        service: service.value,
+        office: office.value,
+        rfq_id: reference,
+        country: data.get("country"),
+        channel: "api"
+      });
+    } catch (_) {
+      mailtoFallback(data, id, officeName, email, copy.submitFailed || "");
+      track("rfq_submit", {
+        service: service.value,
+        office: office.value,
+        rfq_id: id,
+        country: data.get("country"),
+        channel: "mailto_fallback"
+      });
+    } finally {
+      submitting = false;
+      submitButton.disabled = false;
+      submitButton.textContent = originalLabel;
+    }
   });
 
   var params = new URLSearchParams(location.search);

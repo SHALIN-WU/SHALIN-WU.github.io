@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>後台登入｜Northgo</title>
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin/admin.css">
+</head>
+<body>
+  <main class="login-shell">
+    <form class="login-card" id="login-form" autocomplete="on">
+      <a class="brand" href="/" aria-label="Northgo">
+        <img src="/assets/logo.svg" alt="" width="168" height="33">
+      </a>
+      <h1>後台登入</h1>
+      <p class="lead">管理前台詢價內容與處理狀態。</p>
+      <div class="error" id="login-error" hidden></div>
+      <label class="field">
+        <span>帳號</span>
+        <input name="username" autocomplete="username" required>
+      </label>
+      <label class="field">
+        <span>密碼</span>
+        <input name="password" type="password" autocomplete="current-password" required>
+      </label>
+      <button class="btn" type="submit" style="width:100%">登入</button>
+    </form>
+  </main>
+  <script>
+    (async function () {
+      try {
+        const me = await fetch("/api/auth/me", { credentials: "same-origin" });
+        if (me.ok) {
+          location.replace("/admin/");
+          return;
+        }
+      } catch (_) {}
+
+      var form = document.getElementById("login-form");
+      var error = document.getElementById("login-error");
+      form.addEventListener("submit", async function (event) {
+        event.preventDefault();
+        error.hidden = true;
+        var data = new FormData(form);
+        var button = form.querySelector('button[type="submit"]');
+        button.disabled = true;
+        try {
+          var response = await fetch("/api/auth/login", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              username: String(data.get("username") || "").trim(),
+              password: String(data.get("password") || "")
+            })
+          });
+          var payload = await response.json().catch(function () { return {}; });
+          if (!response.ok) {
+            error.textContent = payload.error || "登入失敗";
+            error.hidden = false;
+            return;
+          }
+          location.replace("/admin/");
+        } catch (_) {
+          error.textContent = "無法連線到伺服器";
+          error.hidden = false;
+        } finally {
+          button.disabled = false;
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

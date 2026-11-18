@@ -373,6 +373,10 @@ function renderContact(locale) {
     aliases,
     readyTitle: t(f.readyTitle, locale),
     readyBody: t(f.readyBody, locale),
+    submittedTitle: t(f.submittedTitle, locale),
+    submittedBody: t(f.submittedBody, locale),
+    submitting: t(f.submitting, locale),
+    submitFailed: t(f.submitFailed, locale),
     send: t(f.send, locale),
     copy: t(f.copy, locale),
     copied: t(f.copied, locale),
@@ -386,7 +390,8 @@ function renderContact(locale) {
     weight: t(f.weight, locale),
     volume: t(f.volume, locale),
     ready: t(f.ready, locale),
-    office: t(f.office, locale)
+    office: t(f.office, locale),
+    locale
   };
   const emails = offices.map((office) => `<li><a href="mailto:${office.email}">${esc(t(office.name, locale))} — ${office.email}</a></li>`).join("");
   return `${pageHero(locale, t(ui.contact, locale), t(contactCopy.title, locale), t(contactCopy.lead, locale), [

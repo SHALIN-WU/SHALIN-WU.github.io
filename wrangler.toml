@@ -1,0 +1,18 @@
+name = "northgo"
+compatibility_date = "2025-11-11"
+pages_build_output_dir = "dist"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "northgo-inquiries"
+database_id = "REPLACE_AFTER_D1_CREATE"
+preview_database_id = "DB"
+
+[vars]
+ADMIN_USERNAME = "admin"
+COOKIE_SECURE = "true"
+# Set secrets with:
+#   npx wrangler pages secret put SESSION_SECRET --project-name=northgo
+#   npx wrangler pages secret put ADMIN_PASSWORD --project-name=northgo
+# Optional:
+#   npx wrangler pages secret put ADMIN_PASSWORD_HASH --project-name=northgo

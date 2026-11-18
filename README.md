@@ -1,19 +1,81 @@
 # Northgo website
 
-The static site is generated from the files in `build/`:
+Static Northgo marketing site plus an enquiry admin backend.
+
+## Architecture
+
+| Layer | Role |
+|------|------|
+| `site/` | Generated static frontend (EN / 繁中 / JA / VI) |
+| `admin/` | Enquiry admin UI (login + CRUD) |
+| `functions/` | Cloudflare Pages Functions API |
+| Cloudflare **D1** | Enquiry database (`northgo-inquiries`) |
+| `server/` | Optional local Node fallback (JSON file; not used in Cloudflare prod) |
+
+## Generate pages
 
 ```powershell
 node build/generate.mjs
 ```
 
-Serve `site/` through a local HTTP server when previewing the generated pages.
+## GitHub
 
-## Third-party map data and licenses
+Remote: `https://github.com/SHALIN-WU/SHALIN-WU.github.io.git`
 
-`site/assets/world-pacific.svg` is derived from **Natural Earth 1:110m Admin 0 – Countries**:
+## Cloudflare Pages + D1
 
-- Source: https://www.naturalearthdata.com/downloads/110m-cultural-vectors/110m-admin-0-countries/
-- Upstream vector repository: https://github.com/nvkelso/natural-earth-vector
-- License: Natural Earth data is in the public domain and may be used commercially. See https://www.naturalearthdata.com/about/terms-of-use/
+### 1. Install tooling
 
-The source country geometry was converted to a Pacific-centered equirectangular SVG and simplified to the precision used by the website. The website does not use Google Maps as a basemap or call the Google Maps API; office-detail links may open the public Google Maps website.
+```powershell
+npm install
+```
+
+### 2. Create D1 database
+
+```powershell
+npx wrangler login
+npx wrangler d1 create northgo-inquiries
+```
+
+Copy the returned `database_id` into `wrangler.toml`.
+
+### 3. Apply schema
+
+```powershell
+npm run db:remote
+```
+
+### 4. Prepare static output and deploy
+
+```powershell
+npm run deploy
+```
+
+### 5. Set secrets (production)
+
+```powershell
+npx wrangler pages secret put SESSION_SECRET --project-name=northgo
+npx wrangler pages secret put ADMIN_PASSWORD --project-name=northgo
+```
+
+Default admin username is `admin` (`ADMIN_USERNAME` in `wrangler.toml`).
+
+### Local Cloudflare emulation
+
+```powershell
+npm run db:local
+npm run dev:cf
+```
+
+## Local Node fallback (optional)
+
+```powershell
+npm start
+```
+
+Serves `site/` + `admin/` with a JSON file store under `data/` (not D1).
+
+## Admin
+
+- Login: `/admin/login.html`
+- Manage enquiries: `/admin/`

@@ -66,10 +66,10 @@ export const ui = {
   modes: L("Modes", "運輸方式", "モード", "Phương thức"),
   industryLink: L("Offshore wind", "離岸風電", "洋上風力", "Điện gió ngoài khơi"),
   privacyNote: L(
-    "The enquiry is emailed to the office you select. See the privacy policy.",
-    "詢價會寄到你選擇的辦公室。詳見隱私權政策。",
-    "依頼は選択した拠点へメールします。プライバシーをご覧ください。",
-    "Yêu cầu được gửi email tới văn phòng bạn chọn. Xem chính sách bảo mật."
+    "The enquiry is saved for the office you select. See the privacy policy.",
+    "詢價會送交你選擇的辦公室處理。詳見隱私權政策。",
+    "依頼は選択した拠点へ送られ、管理画面で確認できます。プライバシーをご覧ください。",
+    "Yêu cầu được lưu cho văn phòng bạn chọn. Xem chính sách bảo mật."
   ),
   form: {
     step1: L("Step 1 of 2. Your details.", "第 1 步，共 2 步。聯絡資料。", "2 段階の 1。連絡先。", "Bước 1 / 2. Thông tin liên hệ."),
@@ -81,7 +81,9 @@ export const ui = {
     select: L("Select one", "請選擇", "選択してください", "Chọn một mục"),
     next: L("Continue", "下一步", "次へ", "Tiếp tục"),
     back: L("Back", "上一步", "戻る", "Quay lại"),
-    submit: L("Prepare the enquiry", "產生詢價", "依頼文を作る", "Tạo yêu cầu"),
+    submit: L("Send enquiry", "送出詢價", "見積依頼を送る", "Gửi yêu cầu"),
+    submitting: L("Sending…", "送出中…", "送信中…", "Đang gửi…"),
+    submitFailed: L("Could not send online. You can still email the office.", "線上送出失敗，仍可改寄電子郵件。", "オンライン送信に失敗しました。メールでも送れます。", "Không gửi được trực tuyến. Bạn vẫn có thể email văn phòng."),
     first: L("First name", "名字", "名", "Tên"),
     last: L("Last name", "姓氏", "姓", "Họ"),
     company: L("Company", "公司", "会社", "Công ty"),
@@ -104,6 +106,13 @@ export const ui = {
       "編號 {id} 指定給{office}（{email}）。寄出這封信後，才算送達該辦公室。",
       "番号 {id} は{office}（{email}）宛です。その拠点へメールした時点で届きます。",
       "Mã {id} dành cho {office} ({email}). Yêu cầu được gửi khi bạn email văn phòng đó."
+    ),
+    submittedTitle: L("Enquiry received", "已收到詢價", "見積依頼を受け付けました", "Đã nhận yêu cầu"),
+    submittedBody: L(
+      "Reference {id} was sent to {office}. The office will reply when a quotation is ready.",
+      "編號 {id} 已送交{office}。辦公室備妥報價後會回覆你。",
+      "番号 {id} を{office}へ送りました。見積の準備ができ次第、拠点から返信します。",
+      "Mã {id} đã được gửi tới {office}. Văn phòng sẽ phản hồi khi báo giá sẵn sàng."
     ),
     send: L("Email {email}", "寄到 {email}", "{email} にメール", "Email {email}"),
     copy: L("Copy the text", "複製內容", "文面をコピー", "Sao chép nội dung"),

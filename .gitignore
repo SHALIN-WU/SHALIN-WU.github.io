@@ -1,0 +1,15 @@
+node_modules/
+.env
+data/
+dist/
+.wrangler/
+*.log
+.DS_Store
+Thumbs.db
+freight-hero-desktop.jpg
+freight-hero-desktop.png
+freight-hero-left.png
+freight-hero-right.png
+locations.html
+sitemap.html
+sitemap-tree.html

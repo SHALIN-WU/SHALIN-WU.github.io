@@ -1,8 +1,7 @@
+# Static mirror only. Enquiry API + admin data live on Cloudflare Pages + D1.
 name: Deploy GitHub Pages
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
