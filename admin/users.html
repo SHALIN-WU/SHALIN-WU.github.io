@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>使用者管理｜Northgo</title>
+  <title>使用者｜Northgo 後台管理</title>
   <meta name="robots" content="noindex,nofollow">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,55 +11,102 @@
   <link rel="stylesheet" href="/admin/admin.css">
 </head>
 <body>
-  <div class="admin-app">
-    <aside class="sidebar">
-      <a class="sidebar-brand" href="/admin/">
-        <img src="/assets/logo-on-dark.svg" alt="Northgo" width="168" height="33">
-      </a>
-      <nav class="side-nav" aria-label="後台選單">
-        <a href="/admin/">詢價管理</a>
-        <a class="is-active" id="nav-users" href="/admin/users.html">使用者管理</a>
-        <a href="/" target="_blank" rel="noopener">前台網站</a>
-      </nav>
-      <div class="sidebar-foot">
-        <div class="avatar" id="admin-avatar">NG</div>
-        <div>
-          <strong id="admin-user"></strong>
-          <span id="admin-role"></span>
-        </div>
-      </div>
-      <p class="sidebar-version" id="admin-version">v—</p>
-    </aside>
-
-    <div class="workspace">
-      <header class="hero-band hero-band-users">
-        <img src="/assets/freight-hero.jpg" alt="" width="1280" height="720">
-        <div class="hero-band-copy">
-          <p class="eyebrow">Team Access</p>
-          <h1>使用者管理</h1>
-          <p>新增管理員與專員，分配角色並維護登入權限。</p>
-        </div>
-      </header>
-
-      <div class="top-actions-bar">
-        <button class="btn" type="button" id="create-user-btn">新增使用者</button>
-        <button class="btn ghost" type="button" id="refresh-users-btn">重新整理</button>
-        <button class="btn ghost" type="button" id="logout-btn">登出</button>
-      </div>
-
-      <main class="main">
-        <section class="stats" id="user-stats" aria-label="使用者統計"></section>
-        <section class="panel users-panel">
-          <div class="layout">
-            <div class="list" id="user-list" aria-label="使用者列表"></div>
-            <div class="detail" id="user-detail">
-              <p class="detail-empty" id="user-empty">選擇一位使用者以檢視與編輯，或新增帳號。</p>
-              <div id="user-body" hidden></div>
+  <div class="admin-shell">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a class="brand-lockup" href="/admin/">
+          <span class="brand-name">Northgo</span>
+          <span class="brand-sub">後台管理</span>
+          <span class="brand-ver" id="admin-version">v—</span>
+        </a>
+        <div class="topbar-user">
+          <div class="user-chip">
+            <div class="avatar" id="admin-avatar">NG</div>
+            <div class="user-chip-meta">
+              <strong id="admin-user"></strong>
+              <span id="admin-handle"></span>
             </div>
+            <span class="badge role-admin" id="admin-role"></span>
           </div>
-        </section>
-      </main>
-    </div>
+          <button class="btn ghost" type="button" id="my-account-btn">我的帳號</button>
+          <button class="btn ghost" type="button" id="logout-btn">登出</button>
+        </div>
+      </div>
+    </header>
+
+    <nav class="tab-nav" aria-label="後台選單">
+      <div class="tab-nav-inner">
+        <a href="/admin/">客戶詢問</a>
+        <a class="is-active" id="nav-users" href="/admin/users.html">使用者</a>
+      </div>
+    </nav>
+
+    <main class="page">
+      <section class="panel">
+        <div class="toolbar">
+          <label class="filter-field search">
+            <span>搜尋</span>
+            <input id="search-input" type="search" placeholder="帳號、顯示名稱、角色" autocomplete="off">
+          </label>
+          <label class="filter-field narrow">
+            <span>角色</span>
+            <select id="role-filter">
+              <option value="">全部</option>
+              <option value="admin">管理者</option>
+              <option value="staff">專員</option>
+            </select>
+          </label>
+          <label class="filter-field narrow">
+            <span>每頁</span>
+            <select id="page-size">
+              <option value="10">10</option>
+              <option value="20" selected>20</option>
+              <option value="50">50</option>
+            </select>
+          </label>
+          <div class="toolbar-actions">
+            <div class="settings-wrap">
+              <button class="btn ghost" type="button" id="settings-btn" title="設定" aria-expanded="false" aria-controls="settings-menu"></button>
+              <div class="popover" id="settings-menu" hidden role="menu">
+                <button type="button" data-settings="reset">重設篩選</button>
+                <button type="button" data-settings="account">我的帳號</button>
+                <button type="button" data-settings="site">開啟前台網站</button>
+              </div>
+            </div>
+            <button class="btn ghost" type="button" id="refresh-users-btn" title="重新載入"></button>
+            <button class="btn primary" type="button" id="create-user-btn"></button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="data-table" aria-label="使用者列表">
+            <thead>
+              <tr>
+                <th>帳號</th>
+                <th>顯示名稱</th>
+                <th>角色</th>
+                <th>最後登入</th>
+                <th class="actions-col">操作</th>
+              </tr>
+            </thead>
+            <tbody id="user-table-body"></tbody>
+          </table>
+        </div>
+
+        <div class="pager">
+          <div class="pager-meta" id="pager-meta">共 0 筆</div>
+          <div class="pager-controls">
+            <button class="btn ghost" type="button" id="prev-page" disabled>上頁</button>
+            <button class="btn ghost" type="button" id="next-page" disabled>下頁</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-root" id="modal-root" hidden>
+    <div class="modal-backdrop" data-close-modal></div>
+    <div class="modal-panel" id="modal-panel" role="dialog" aria-modal="true"></div>
   </div>
 
   <div class="toast" id="toast" hidden></div>

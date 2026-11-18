@@ -3,17 +3,29 @@
   var state = {
     me: null,
     items: [],
-    selectedId: null,
-    selected: null,
-    mode: "view",
+    filtered: [],
+    q: "",
+    role: "",
+    page: 1,
+    pageSize: 20,
+    mode: null,
+    editing: null,
     pendingAvatar: null,
-    removeAvatar: false
+    removeAvatar: false,
+    accountOnly: false
   };
 
-  var listEl = document.getElementById("user-list");
-  var bodyEl = document.getElementById("user-body");
-  var emptyEl = document.getElementById("user-empty");
-  var statsEl = document.getElementById("user-stats");
+  var tableBody = document.getElementById("user-table-body");
+  var pagerMeta = document.getElementById("pager-meta");
+  var prevBtn = document.getElementById("prev-page");
+  var nextBtn = document.getElementById("next-page");
+  var searchInput = document.getElementById("search-input");
+  var roleFilter = document.getElementById("role-filter");
+  var pageSizeSelect = document.getElementById("page-size");
+  var settingsBtn = document.getElementById("settings-btn");
+  var settingsMenu = document.getElementById("settings-menu");
+  var refreshBtn = document.getElementById("refresh-users-btn");
+  var createBtn = document.getElementById("create-user-btn");
 
   function emptyForm() {
     return {
@@ -57,47 +69,84 @@
     );
   }
 
-  function renderStats() {
-    var total = state.items.length;
-    var admins = state.items.filter(function (u) { return u.role === "admin"; }).length;
-    var staff = state.items.filter(function (u) { return u.role === "staff"; }).length;
-    var active = state.items.filter(function (u) { return u.active; }).length;
-    statsEl.innerHTML = [
-      ["全部", total],
-      ["管理員", admins],
-      ["專員", staff],
-      ["啟用中", active]
-    ].map(function (pair) {
-      return '<article class="stat"><div class="label">' + S.esc(pair[0]) + '</div><div class="value">' + S.esc(pair[1]) + "</div></article>";
-    }).join("");
+  function applyFilters() {
+    var q = state.q.trim().toLowerCase();
+    state.filtered = state.items.filter(function (user) {
+      if (state.role && user.role !== state.role) return false;
+      if (!q) return true;
+      var roleLabel = (S.ROLE_LABELS[user.role] || user.role || "").toLowerCase();
+      var hay = [
+        user.username,
+        user.displayName,
+        user.email,
+        user.role,
+        roleLabel
+      ].join(" ").toLowerCase();
+      return hay.indexOf(q) !== -1;
+    });
+    var pages = Math.max(1, Math.ceil(state.filtered.length / state.pageSize) || 1);
+    if (state.page > pages) state.page = pages;
   }
 
-  function renderList() {
-    if (!state.items.length) {
-      listEl.innerHTML = '<p class="empty">尚無使用者，請先新增。</p>';
-      return;
+  function renderTable() {
+    applyFilters();
+    var pageData = S.paginate(state.filtered, state.page, state.pageSize);
+    state.page = pageData.page;
+
+    if (!pageData.items.length) {
+      tableBody.innerHTML =
+        '<tr><td colspan="5"><p class="empty">' +
+        (state.items.length ? "沒有符合條件的使用者。" : "尚無使用者，請先新增。") +
+        "</p></td></tr>";
+    } else {
+      tableBody.innerHTML = pageData.items.map(function (user) {
+        var isMe = state.me && state.me.id === user.id;
+        var lastLogin = user.lastLoginAt
+          ? S.formatDate(user.lastLoginAt, true)
+          : "尚未登入";
+        var roleClass = user.role === "admin" ? "role-admin" : "role-staff";
+        return (
+          "<tr data-id=\"" + S.esc(user.id) + "\">" +
+            "<td>" +
+              '<div class="account-cell">' +
+                S.avatarHtml(user, "tiny") +
+                '<span class="handle">@' + S.esc(user.username) + "</span>" +
+                (isMe ? '<span class="badge you">你</span>' : "") +
+              "</div>" +
+            "</td>" +
+            "<td>" + S.esc(user.displayName || "—") + "</td>" +
+            "<td><span class=\"badge " + roleClass + "\">" + S.ICONS.star + " " +
+              S.esc(S.ROLE_LABELS[user.role] || user.role) + "</span></td>" +
+            "<td>" + S.esc(lastLogin) + "</td>" +
+            '<td class="actions-col"><div class="actions">' +
+              '<button class="icon-btn edit" type="button" data-action="edit" title="編輯" aria-label="編輯">' +
+                S.ICONS.edit + "</button>" +
+              '<button class="icon-btn delete' + (isMe ? " is-disabled" : "") +
+                '" type="button" data-action="delete" title="' +
+                (isMe ? "無法刪除自己的帳號" : "刪除") +
+                '" aria-label="刪除"' + (isMe ? " disabled" : "") + ">" +
+                S.ICONS.trash + "</button>" +
+            "</div></td>" +
+          "</tr>"
+        );
+      }).join("");
     }
-    listEl.innerHTML = state.items.map(function (user) {
-      var selected = user.id === state.selectedId ? " is-selected" : "";
-      return (
-        '<button class="row user-row' + selected + '" type="button" data-id="' + S.esc(user.id) + '">' +
-          '<div class="row-top">' +
-            S.avatarHtml(user, "tiny") +
-            '<span class="row-title">' + S.esc(user.displayName || user.username) + "</span>" +
-            '<span class="badge ' + (user.active ? "quoted" : "closed") + '">' + (user.active ? "啟用" : "停用") + "</span>" +
-          "</div>" +
-          '<div class="row-sub">@' + S.esc(user.username) + " · " + S.esc(S.ROLE_LABELS[user.role] || user.role) + "</div>" +
-          '<div class="meta"><span>' + S.esc(user.email || "未填 Email") + "</span><span>" + S.esc(S.formatDate(user.lastLoginAt)) + "</span></div>" +
-        "</button>"
-      );
-    }).join("");
+
+    pagerMeta.textContent =
+      "共 " + pageData.total + " 筆, 第 " + pageData.page + "/" + pageData.pages + " 頁";
+    prevBtn.disabled = pageData.page <= 1;
+    nextBtn.disabled = pageData.page >= pageData.pages;
   }
 
   function renderForm(data, mode) {
+    var title = mode === "create" ? "新增使用者" : (state.accountOnly ? "我的帳號" : "編輯使用者");
+    var roleLocked = state.accountOnly && state.me && state.me.role !== "admin";
     return (
       '<form id="user-form" class="inquiry-form" novalidate>' +
-        "<h2>" + (mode === "create" ? "新增使用者" : "編輯使用者") + "</h2>" +
-        '<p class="ref">' + (mode === "create" ? "建立後即可登入後台" : "@" + S.esc(data.username)) + "</p>" +
+        "<h2>" + title + "</h2>" +
+        '<p class="ref">' +
+          (mode === "create" ? "建立後即可登入後台" : "@" + S.esc(data.username || "")) +
+        "</p>" +
         avatarEditor(data) +
         '<div class="form-grid">' +
           (mode === "create"
@@ -105,11 +154,11 @@
             : "") +
           '<label class="field' + (mode === "create" ? "" : " span-2") + '"><span>顯示名稱 *</span><input name="displayName" required value="' + S.esc(data.displayName || "") + '"></label>' +
           '<label class="field span-2"><span>Email</span><input name="email" type="email" value="' + S.esc(data.email || "") + '"></label>' +
-          '<label class="field"><span>角色 *</span><select name="role">' +
-            '<option value="admin"' + (data.role === "admin" ? " selected" : "") + ">管理員</option>" +
+          '<label class="field"><span>角色 *</span><select name="role"' + (roleLocked ? " disabled" : "") + ">" +
+            '<option value="admin"' + (data.role === "admin" ? " selected" : "") + ">管理者</option>" +
             '<option value="staff"' + (data.role === "staff" ? " selected" : "") + ">專員</option>" +
           "</select></label>" +
-          '<label class="field"><span>狀態</span><select name="active">' +
+          '<label class="field"><span>狀態</span><select name="active"' + (state.accountOnly ? " disabled" : "") + ">" +
             '<option value="1"' + (data.active !== false ? " selected" : "") + ">啟用</option>" +
             '<option value="0"' + (data.active === false ? " selected" : "") + ">停用</option>" +
           "</select></label>" +
@@ -117,31 +166,13 @@
             '<input name="password" type="password" autocomplete="new-password"' + (mode === "create" ? " required minlength=\"8\"" : " minlength=\"8\"") + "></label>" +
         "</div>" +
         '<div class="detail-actions">' +
-          '<button class="btn" type="submit">' + (mode === "create" ? "建立" : "儲存") + "</button>" +
-          '<button class="btn ghost" type="button" id="cancel-user-btn">取消</button>' +
-          (mode === "edit" ? '<button class="btn danger" type="button" id="delete-user-btn">刪除</button>' : "") +
+          '<button class="btn primary" type="submit">' + (mode === "create" ? "建立" : "儲存") + "</button>" +
+          '<button class="btn ghost" type="button" data-close-modal>取消</button>' +
+          (mode === "edit" && !state.accountOnly && !(state.me && state.me.id === data.id)
+            ? '<button class="btn danger" type="button" id="delete-user-btn">刪除</button>'
+            : "") +
         "</div>" +
       "</form>"
-    );
-  }
-
-  function renderReadonly(user) {
-    return (
-      '<div class="user-profile">' +
-        S.avatarHtml(user, "large") +
-        "<h2>" + S.esc(user.displayName || user.username) + "</h2>" +
-        '<p class="ref">@' + S.esc(user.username) + " · " + S.esc(S.ROLE_LABELS[user.role] || user.role) + "</p>" +
-      "</div>" +
-      '<dl class="kv">' +
-        "<dt>Email</dt><dd>" + S.esc(user.email || "—") + "</dd>" +
-        "<dt>狀態</dt><dd>" + (user.active ? "啟用" : "停用") + "</dd>" +
-        "<dt>建立時間</dt><dd>" + S.esc(S.formatDate(user.createdAt)) + "</dd>" +
-        "<dt>最近登入</dt><dd>" + S.esc(S.formatDate(user.lastLoginAt)) + "</dd>" +
-      "</dl>" +
-      '<div class="detail-actions">' +
-        '<button class="btn" type="button" id="edit-user-btn">編輯</button>' +
-        '<button class="btn danger" type="button" id="delete-user-btn">刪除</button>' +
-      "</div>"
     );
   }
 
@@ -159,7 +190,7 @@
       clearBtn.addEventListener("click", function () {
         state.pendingAvatar = null;
         state.removeAvatar = true;
-        renderDetail();
+        openEditor(state.editing, state.mode, state.accountOnly);
       });
     }
     if (fileInput) {
@@ -170,7 +201,7 @@
           .then(function (dataUrl) {
             state.pendingAvatar = dataUrl;
             state.removeAvatar = false;
-            renderDetail();
+            openEditor(state.editing, state.mode, state.accountOnly);
           })
           .catch(function (error) {
             S.toast(error.message || "無法處理圖片", true);
@@ -182,7 +213,7 @@
     }
   }
 
-  function bindDetail() {
+  function bindForm() {
     bindAvatarPicker();
     var form = document.getElementById("user-form");
     if (form) {
@@ -193,55 +224,26 @@
         });
       });
     }
-    var cancelBtn = document.getElementById("cancel-user-btn");
-    if (cancelBtn) {
-      cancelBtn.addEventListener("click", function () {
-        state.pendingAvatar = null;
-        state.removeAvatar = false;
-        state.mode = "view";
-        if (!state.selected) state.selectedId = null;
-        renderDetail();
-        renderList();
-      });
-    }
-    var editBtn = document.getElementById("edit-user-btn");
-    if (editBtn) {
-      editBtn.addEventListener("click", function () {
-        state.pendingAvatar = null;
-        state.removeAvatar = false;
-        state.mode = "edit";
-        renderDetail();
-      });
-    }
     var deleteBtn = document.getElementById("delete-user-btn");
     if (deleteBtn) {
       deleteBtn.addEventListener("click", function () {
-        deleteSelected().catch(function (error) {
+        deleteUser(state.editing).catch(function (error) {
           if (error.message !== "unauthorized") S.toast(error.message, true);
         });
       });
     }
   }
 
-  function renderDetail() {
-    if (state.mode === "create") {
-      emptyEl.hidden = true;
-      bodyEl.hidden = false;
-      bodyEl.innerHTML = renderForm(emptyForm(), "create");
-      bindDetail();
-      return;
+  function openEditor(user, mode, accountOnly) {
+    state.mode = mode;
+    state.editing = user || emptyForm();
+    state.accountOnly = Boolean(accountOnly);
+    if (mode === "create") {
+      state.pendingAvatar = null;
+      state.removeAvatar = false;
     }
-    if (!state.selected) {
-      bodyEl.hidden = true;
-      emptyEl.hidden = false;
-      return;
-    }
-    emptyEl.hidden = true;
-    bodyEl.hidden = false;
-    bodyEl.innerHTML = state.mode === "edit"
-      ? renderForm(state.selected, "edit")
-      : renderReadonly(state.selected);
-    bindDetail();
+    S.openModal(renderForm(state.editing, mode));
+    bindForm();
   }
 
   async function syncAvatar(userId) {
@@ -265,26 +267,7 @@
   async function loadUsers() {
     var data = await S.api("/api/users");
     state.items = data.items || [];
-    if (state.selectedId) {
-      state.selected = state.items.find(function (item) { return item.id === state.selectedId; }) || null;
-      if (!state.selected) {
-        state.selectedId = null;
-        state.mode = "view";
-      }
-    }
-    renderStats();
-    renderList();
-    renderDetail();
-  }
-
-  async function selectUser(id) {
-    state.selectedId = id;
-    state.mode = "view";
-    state.pendingAvatar = null;
-    state.removeAvatar = false;
-    state.selected = state.items.find(function (item) { return item.id === id; }) || null;
-    renderList();
-    renderDetail();
+    renderTable();
   }
 
   async function saveForm(form) {
@@ -292,84 +275,182 @@
     var payload = {
       displayName: String(data.get("displayName") || "").trim(),
       email: String(data.get("email") || "").trim(),
-      role: String(data.get("role") || "staff"),
-      active: String(data.get("active")) === "1",
+      role: String(data.get("role") || (state.editing && state.editing.role) || "staff"),
+      active: String(data.get("active") || (state.editing && state.editing.active === false ? "0" : "1")) === "1",
       password: String(data.get("password") || "")
     };
 
     if (state.mode === "create") {
       payload.username = String(data.get("username") || "").trim().toLowerCase();
       if (state.pendingAvatar) payload.avatarData = state.pendingAvatar;
-      var created = await S.api("/api/users", {
+      await S.api("/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
       S.toast("已建立使用者");
-      state.selectedId = created.item.id;
-      state.selected = created.item;
       state.pendingAvatar = null;
       state.removeAvatar = false;
-      state.mode = "view";
+      S.closeModal();
       await loadUsers();
       return;
     }
 
     if (!payload.password) delete payload.password;
-    var updated = await S.api("/api/users/" + encodeURIComponent(state.selected.id), {
+    if (state.accountOnly) {
+      delete payload.role;
+      delete payload.active;
+    }
+    var id = state.editing.id;
+    var updated = await S.api("/api/users/" + encodeURIComponent(id), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
-    var withAvatar = await syncAvatar(state.selected.id);
+    var withAvatar = await syncAvatar(id);
     S.toast("已儲存使用者");
-    state.selected = withAvatar || updated.item;
-    state.selectedId = state.selected.id;
     state.pendingAvatar = null;
     state.removeAvatar = false;
-    state.mode = "view";
+    S.closeModal();
     await loadUsers();
-    if (state.me && state.me.id === state.selected.id) {
+    if (state.me && state.me.id === id) {
+      state.me = withAvatar || updated.item;
       await S.ensureAuth();
     }
   }
 
-  async function deleteSelected() {
-    if (!state.selected) return;
-    if (!window.confirm("確定刪除使用者「" + (state.selected.displayName || state.selected.username) + "」？")) return;
-    await S.api("/api/users/" + encodeURIComponent(state.selected.id), { method: "DELETE" });
+  async function deleteUser(user) {
+    if (!user || !user.id) return;
+    if (state.me && state.me.id === user.id) {
+      S.toast("無法刪除目前登入的帳號", true);
+      return;
+    }
+    if (!window.confirm("確定刪除使用者「" + (user.displayName || user.username) + "」？")) return;
+    await S.api("/api/users/" + encodeURIComponent(user.id), { method: "DELETE" });
     S.toast("已刪除使用者");
-    state.selected = null;
-    state.selectedId = null;
-    state.pendingAvatar = null;
-    state.removeAvatar = false;
-    state.mode = "view";
+    S.closeModal();
     await loadUsers();
   }
 
-  listEl.addEventListener("click", function (event) {
-    var button = event.target.closest("[data-id]");
-    if (!button) return;
-    selectUser(button.getAttribute("data-id"));
-  });
-
-  document.getElementById("create-user-btn").addEventListener("click", function () {
-    state.mode = "create";
-    state.selected = null;
-    state.selectedId = null;
+  function openMyAccount() {
+    if (!state.me) return;
+    var mine = state.items.find(function (item) { return item.id === state.me.id; }) || state.me;
     state.pendingAvatar = null;
     state.removeAvatar = false;
-    renderList();
-    renderDetail();
+    openEditor(mine, "edit", true);
+  }
+
+  function wireToolbarIcons() {
+    settingsBtn.innerHTML = S.ICONS.settings + " 設定";
+    refreshBtn.innerHTML = S.ICONS.refresh + " 重新載入";
+    createBtn.innerHTML = S.ICONS.plus + " 新增使用者";
+  }
+
+  tableBody.addEventListener("click", function (event) {
+    var button = event.target.closest("[data-action]");
+    if (!button) return;
+    var row = button.closest("tr[data-id]");
+    if (!row) return;
+    var user = state.items.find(function (item) { return item.id === row.getAttribute("data-id"); });
+    if (!user) return;
+    var action = button.getAttribute("data-action");
+    if (action === "edit") {
+      state.pendingAvatar = null;
+      state.removeAvatar = false;
+      openEditor(user, "edit", false);
+    } else if (action === "delete") {
+      deleteUser(user).catch(function (error) {
+        if (error.message !== "unauthorized") S.toast(error.message, true);
+      });
+    }
   });
 
-  document.getElementById("refresh-users-btn").addEventListener("click", function () {
+  var searchTimer = null;
+  searchInput.addEventListener("input", function () {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(function () {
+      state.q = searchInput.value;
+      state.page = 1;
+      renderTable();
+    }, 180);
+  });
+
+  roleFilter.addEventListener("change", function () {
+    state.role = roleFilter.value;
+    state.page = 1;
+    renderTable();
+  });
+
+  pageSizeSelect.addEventListener("change", function () {
+    state.pageSize = Number(pageSizeSelect.value) || 20;
+    state.page = 1;
+    renderTable();
+  });
+
+  prevBtn.addEventListener("click", function () {
+    state.page -= 1;
+    renderTable();
+  });
+
+  nextBtn.addEventListener("click", function () {
+    state.page += 1;
+    renderTable();
+  });
+
+  createBtn.addEventListener("click", function () {
+    state.pendingAvatar = null;
+    state.removeAvatar = false;
+    openEditor(emptyForm(), "create", false);
+  });
+
+  refreshBtn.addEventListener("click", function () {
     loadUsers().catch(function (error) {
       if (error.message !== "unauthorized") S.toast(error.message, true);
     });
   });
 
+  document.getElementById("my-account-btn").addEventListener("click", openMyAccount);
+
+  settingsBtn.addEventListener("click", function (event) {
+    event.stopPropagation();
+    var open = settingsMenu.hidden;
+    settingsMenu.hidden = !open;
+    settingsBtn.setAttribute("aria-expanded", open ? "true" : "false");
+  });
+
+  settingsMenu.addEventListener("click", function (event) {
+    var btn = event.target.closest("[data-settings]");
+    if (!btn) return;
+    var action = btn.getAttribute("data-settings");
+    settingsMenu.hidden = true;
+    settingsBtn.setAttribute("aria-expanded", "false");
+    if (action === "reset") {
+      searchInput.value = "";
+      roleFilter.value = "";
+      pageSizeSelect.value = "20";
+      state.q = "";
+      state.role = "";
+      state.pageSize = 20;
+      state.page = 1;
+      renderTable();
+    } else if (action === "account") {
+      openMyAccount();
+    } else if (action === "site") {
+      window.open("/", "_blank", "noopener");
+    }
+  });
+
+  document.addEventListener("click", function (event) {
+    if (!settingsMenu.hidden && !event.target.closest(".settings-wrap")) {
+      settingsMenu.hidden = true;
+      settingsBtn.setAttribute("aria-expanded", "false");
+    }
+  });
+
+  S.bindModalChrome();
   S.bindLogout();
+  wireToolbarIcons();
+
   S.ensureAuth()
     .then(function (me) {
       state.me = me;

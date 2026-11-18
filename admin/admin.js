@@ -13,22 +13,26 @@
     status: "all",
     office: "",
     q: "",
+    page: 1,
+    pageSize: 20,
     items: [],
-    counts: {},
-    selectedId: null,
     selected: null,
     mode: "view",
     meta: { offices: [], services: [], locales: [], statuses: [] }
   };
 
-  var statsEl = document.getElementById("stats");
-  var listEl = document.getElementById("inquiry-list");
-  var detailBody = document.getElementById("detail-body");
-  var detailEmpty = document.getElementById("detail-empty");
+  var tableBody = document.getElementById("inquiry-table-body");
+  var pagerMeta = document.getElementById("pager-meta");
+  var prevBtn = document.getElementById("prev-page");
+  var nextBtn = document.getElementById("next-page");
   var searchInput = document.getElementById("search-input");
+  var statusFilter = document.getElementById("status-filter");
   var officeFilter = document.getElementById("office-filter");
+  var pageSizeSelect = document.getElementById("page-size");
   var refreshBtn = document.getElementById("refresh-btn");
   var createBtn = document.getElementById("create-btn");
+  var settingsBtn = document.getElementById("settings-btn");
+  var settingsMenu = document.getElementById("settings-menu");
 
   function emptyForm() {
     return {
@@ -113,8 +117,8 @@
           '<label class="field span-2"><span>內部備註</span><textarea name="notes">' + S.esc(data.notes || "") + "</textarea></label>" +
         "</div>" +
         '<div class="detail-actions">' +
-          '<button class="btn" type="submit">' + (mode === "create" ? "建立" : "儲存") + "</button>" +
-          '<button class="btn ghost" type="button" id="cancel-form-btn">取消</button>' +
+          '<button class="btn primary" type="submit">' + (mode === "create" ? "建立" : "儲存") + "</button>" +
+          '<button class="btn ghost" type="button" data-close-modal>取消</button>' +
           (mode === "edit" ? '<button class="btn danger" type="button" id="delete-btn">刪除</button>' : "") +
         "</div>" +
       "</form>"
@@ -151,15 +155,16 @@
         row("更新時間", S.formatDate(item.updatedAt)) +
       "</dl>" +
       '<div class="detail-actions">' +
-        '<button class="btn" type="button" id="edit-btn">編輯</button>' +
+        '<button class="btn primary" type="button" id="edit-btn">編輯</button>' +
         '<a class="btn ghost" href="mailto:' + S.esc(item.email) +
           "?subject=" + encodeURIComponent("Re: Northgo " + item.reference) + '">回信客戶</a>' +
         '<button class="btn danger" type="button" id="delete-btn">刪除</button>' +
+        '<button class="btn ghost" type="button" data-close-modal>關閉</button>' +
       "</div>"
     );
   }
 
-  function bindDetailActions() {
+  function bindModalActions() {
     var form = document.getElementById("inquiry-form");
     if (form) {
       form.addEventListener("submit", function (event) {
@@ -169,25 +174,11 @@
         });
       });
     }
-    var cancelBtn = document.getElementById("cancel-form-btn");
-    if (cancelBtn) {
-      cancelBtn.addEventListener("click", function () {
-        if (state.mode === "create") {
-          state.mode = "view";
-          state.selected = null;
-          state.selectedId = null;
-        } else {
-          state.mode = "view";
-        }
-        renderDetail();
-        renderList();
-      });
-    }
     var editBtn = document.getElementById("edit-btn");
     if (editBtn) {
       editBtn.addEventListener("click", function () {
         state.mode = "edit";
-        renderDetail();
+        openModalForSelection();
       });
     }
     var deleteBtn = document.getElementById("delete-btn");
@@ -198,6 +189,19 @@
         });
       });
     }
+  }
+
+  function openModalForSelection() {
+    if (state.mode === "create") {
+      S.openModal(renderForm(emptyForm(), "create"), true);
+    } else if (state.mode === "edit" && state.selected) {
+      S.openModal(renderForm(state.selected, "edit"), true);
+    } else if (state.selected) {
+      S.openModal(renderReadonly(state.selected), true);
+    } else {
+      return;
+    }
+    bindModalActions();
   }
 
   function readForm(form) {
@@ -234,11 +238,10 @@
         body: JSON.stringify(payload)
       });
       S.toast("已建立詢價 " + (created.reference || ""));
-      state.selectedId = created.id;
       state.selected = created.item || null;
       state.mode = "view";
+      S.closeModal();
       await loadList();
-      if (!state.selected && state.selectedId) await selectInquiry(state.selectedId);
       return;
     }
 
@@ -249,78 +252,60 @@
     });
     S.toast("已儲存變更");
     state.selected = updated.item;
-    state.selectedId = updated.item.id;
     state.mode = "view";
+    S.closeModal();
     await loadList();
   }
 
   async function loadMeta() {
     state.meta = await S.api("/api/meta");
-    officeFilter.innerHTML = '<option value="">全部辦公室</option>' +
+    officeFilter.innerHTML = '<option value="">全部</option>' +
       state.meta.offices.map(function (office) {
         return '<option value="' + S.esc(office.id) + '">' + S.esc(office.name) + "</option>";
       }).join("");
     officeFilter.value = state.office;
   }
 
-  function renderStats() {
-    var keys = ["all", "new", "in_progress", "quoted", "closed", "spam"];
-    statsEl.innerHTML = keys.map(function (key) {
-      var active = state.status === key ? " is-active" : "";
-      return (
-        '<article class="stat' + active + '">' +
-          '<button type="button" data-status="' + key + '">' +
-            '<div class="label">' + S.esc(STATUS_LABELS[key]) + "</div>" +
-            '<div class="value">' + S.esc(state.counts[key] || 0) + "</div>" +
-          "</button>" +
-        "</article>"
-      );
-    }).join("");
-  }
+  function renderTable() {
+    var pageData = S.paginate(state.items, state.page, state.pageSize);
+    state.page = pageData.page;
 
-  function renderList() {
-    if (!state.items.length) {
-      listEl.innerHTML = '<p class="empty">目前沒有符合條件的詢價。</p>';
-      return;
-    }
-    listEl.innerHTML = state.items.map(function (item) {
-      var selected = item.id === state.selectedId ? " is-selected" : "";
-      return (
-        '<button class="row' + selected + '" type="button" data-id="' + S.esc(item.id) + '">' +
-          '<div class="row-top">' +
-            '<span class="row-title">' + S.esc(item.company || (item.first + " " + item.last)) + "</span>" +
-            '<span class="badge ' + S.esc(item.status) + '">' + S.esc(STATUS_LABELS[item.status] || item.status) + "</span>" +
-          "</div>" +
-          '<div class="row-sub">' + S.esc(item.serviceLabel || item.service) + " · " + S.esc(item.officeName || item.office) + "</div>" +
-          '<div class="meta">' +
-            "<span>" + S.esc(item.reference) + "</span>" +
-            "<span>" + S.esc(S.formatDate(item.createdAt)) + "</span>" +
-          "</div>" +
-        "</button>"
-      );
-    }).join("");
-  }
-
-  function renderDetail() {
-    if (state.mode === "create") {
-      detailEmpty.hidden = true;
-      detailBody.hidden = false;
-      detailBody.innerHTML = renderForm(emptyForm(), "create");
-      bindDetailActions();
-      return;
+    if (!pageData.items.length) {
+      tableBody.innerHTML =
+        '<tr><td colspan="7"><p class="empty">目前沒有符合條件的詢價。</p></td></tr>';
+    } else {
+      tableBody.innerHTML = pageData.items.map(function (item) {
+        var name = (item.company || ((item.first || "") + " " + (item.last || "")).trim() || "—");
+        return (
+          "<tr data-id=\"" + S.esc(item.id) + "\">" +
+            "<td><strong>" + S.esc(item.reference || "—") + "</strong></td>" +
+            "<td>" +
+              S.esc(name) +
+              '<div style="color:var(--muted);font-size:0.82rem">' +
+                S.esc(((item.first || "") + " " + (item.last || "")).trim()) +
+              "</div>" +
+            "</td>" +
+            "<td>" + S.esc(item.serviceLabel || item.service || "—") + "</td>" +
+            "<td>" + S.esc(item.officeName || item.office || "—") + "</td>" +
+            '<td><span class="badge ' + S.esc(item.status || "") + '">' +
+              S.esc(STATUS_LABELS[item.status] || item.status || "—") +
+            "</span></td>" +
+            "<td>" + S.esc(S.formatDate(item.createdAt, true)) + "</td>" +
+            '<td class="actions-col"><div class="actions">' +
+              '<button class="icon-btn edit" type="button" data-action="edit" title="編輯" aria-label="編輯">' +
+                S.ICONS.edit + "</button>" +
+              '<button class="icon-btn delete" type="button" data-action="delete" title="刪除" aria-label="刪除">' +
+                S.ICONS.trash + "</button>" +
+            "</div></td>" +
+          "</tr>"
+        );
+      }).join("");
     }
 
-    var item = state.selected;
-    if (!item) {
-      detailBody.hidden = true;
-      detailEmpty.hidden = false;
-      return;
-    }
-
-    detailEmpty.hidden = true;
-    detailBody.hidden = false;
-    detailBody.innerHTML = state.mode === "edit" ? renderForm(item, "edit") : renderReadonly(item);
-    bindDetailActions();
+    pagerMeta.textContent =
+      "共 " + pageData.total + " 筆, 第 " + pageData.page + "/" + pageData.pages + " 頁";
+    prevBtn.disabled = pageData.page <= 1;
+    nextBtn.disabled = pageData.page >= pageData.pages;
   }
 
   async function loadList() {
@@ -328,33 +313,22 @@
     if (state.status && state.status !== "all") params.set("status", state.status);
     if (state.office) params.set("office", state.office);
     if (state.q) params.set("q", state.q);
-    params.set("limit", "200");
+    params.set("limit", "500");
     var data = await S.api("/api/inquiries?" + params.toString());
     state.items = data.items || [];
-    state.counts = data.counts || {};
-    if (state.selectedId && state.mode !== "create") {
-      state.selected = state.items.find(function (item) { return item.id === state.selectedId; }) || state.selected;
-      if (!state.selected || state.selected.id !== state.selectedId) {
-        state.selectedId = null;
-        state.selected = null;
-        state.mode = "view";
-      }
-    }
-    renderStats();
-    renderList();
-    renderDetail();
+    var pages = Math.max(1, Math.ceil(state.items.length / state.pageSize) || 1);
+    if (state.page > pages) state.page = pages;
+    renderTable();
   }
 
-  async function selectInquiry(id) {
-    state.selectedId = id;
-    state.mode = "view";
+  async function selectInquiry(id, mode) {
     state.selected = state.items.find(function (item) { return item.id === id; }) || null;
-    renderList();
     if (!state.selected) {
       var data = await S.api("/api/inquiries/" + encodeURIComponent(id));
       state.selected = data.item;
     }
-    renderDetail();
+    state.mode = mode || "view";
+    openModalForSelection();
   }
 
   async function deleteSelected() {
@@ -363,33 +337,45 @@
     await S.api("/api/inquiries/" + encodeURIComponent(state.selected.id), { method: "DELETE" });
     S.toast("已刪除");
     state.selected = null;
-    state.selectedId = null;
     state.mode = "view";
+    S.closeModal();
     await loadList();
   }
 
   function startCreate() {
     state.mode = "create";
     state.selected = null;
-    state.selectedId = null;
-    renderList();
-    renderDetail();
-    detailBody.scrollIntoView({ block: "start" });
+    openModalForSelection();
   }
 
-  statsEl.addEventListener("click", function (event) {
-    var button = event.target.closest("[data-status]");
-    if (!button) return;
-    state.status = button.getAttribute("data-status");
-    loadList().catch(function (error) {
-      if (error.message !== "unauthorized") S.toast(error.message, true);
-    });
-  });
+  function wireToolbarIcons() {
+    settingsBtn.innerHTML = S.ICONS.settings + " 設定";
+    refreshBtn.innerHTML = S.ICONS.refresh + " 重新載入";
+    createBtn.innerHTML = S.ICONS.plus + " 新增詢價";
+  }
 
-  listEl.addEventListener("click", function (event) {
-    var button = event.target.closest("[data-id]");
-    if (!button) return;
-    selectInquiry(button.getAttribute("data-id")).catch(function (error) {
+  tableBody.addEventListener("click", function (event) {
+    var button = event.target.closest("[data-action]");
+    var row = event.target.closest("tr[data-id]");
+    if (!row) return;
+    var id = row.getAttribute("data-id");
+
+    if (button) {
+      var action = button.getAttribute("data-action");
+      if (action === "edit") {
+        selectInquiry(id, "edit").catch(function (error) {
+          if (error.message !== "unauthorized") S.toast(error.message, true);
+        });
+      } else if (action === "delete") {
+        state.selected = state.items.find(function (item) { return item.id === id; }) || null;
+        deleteSelected().catch(function (error) {
+          if (error.message !== "unauthorized") S.toast(error.message, true);
+        });
+      }
+      return;
+    }
+
+    selectInquiry(id, "view").catch(function (error) {
       if (error.message !== "unauthorized") S.toast(error.message, true);
     });
   });
@@ -399,17 +385,43 @@
     clearTimeout(searchTimer);
     searchTimer = setTimeout(function () {
       state.q = searchInput.value.trim();
+      state.page = 1;
       loadList().catch(function (error) {
         if (error.message !== "unauthorized") S.toast(error.message, true);
       });
     }, 250);
   });
 
-  officeFilter.addEventListener("change", function () {
-    state.office = officeFilter.value;
+  statusFilter.addEventListener("change", function () {
+    state.status = statusFilter.value || "all";
+    state.page = 1;
     loadList().catch(function (error) {
       if (error.message !== "unauthorized") S.toast(error.message, true);
     });
+  });
+
+  officeFilter.addEventListener("change", function () {
+    state.office = officeFilter.value;
+    state.page = 1;
+    loadList().catch(function (error) {
+      if (error.message !== "unauthorized") S.toast(error.message, true);
+    });
+  });
+
+  pageSizeSelect.addEventListener("change", function () {
+    state.pageSize = Number(pageSizeSelect.value) || 20;
+    state.page = 1;
+    renderTable();
+  });
+
+  prevBtn.addEventListener("click", function () {
+    state.page -= 1;
+    renderTable();
+  });
+
+  nextBtn.addEventListener("click", function () {
+    state.page += 1;
+    renderTable();
   });
 
   refreshBtn.addEventListener("click", function () {
@@ -419,7 +431,48 @@
   });
 
   createBtn.addEventListener("click", startCreate);
+
+  settingsBtn.addEventListener("click", function (event) {
+    event.stopPropagation();
+    var open = settingsMenu.hidden;
+    settingsMenu.hidden = !open;
+    settingsBtn.setAttribute("aria-expanded", open ? "true" : "false");
+  });
+
+  settingsMenu.addEventListener("click", function (event) {
+    var btn = event.target.closest("[data-settings]");
+    if (!btn) return;
+    var action = btn.getAttribute("data-settings");
+    settingsMenu.hidden = true;
+    settingsBtn.setAttribute("aria-expanded", "false");
+    if (action === "reset") {
+      searchInput.value = "";
+      statusFilter.value = "all";
+      officeFilter.value = "";
+      pageSizeSelect.value = "20";
+      state.q = "";
+      state.status = "all";
+      state.office = "";
+      state.pageSize = 20;
+      state.page = 1;
+      loadList().catch(function (error) {
+        if (error.message !== "unauthorized") S.toast(error.message, true);
+      });
+    } else if (action === "site") {
+      window.open("/", "_blank", "noopener");
+    }
+  });
+
+  document.addEventListener("click", function (event) {
+    if (!settingsMenu.hidden && !event.target.closest(".settings-wrap")) {
+      settingsMenu.hidden = true;
+      settingsBtn.setAttribute("aria-expanded", "false");
+    }
+  });
+
+  S.bindModalChrome();
   S.bindLogout();
+  wireToolbarIcons();
 
   S.ensureAuth()
     .then(loadMeta)
