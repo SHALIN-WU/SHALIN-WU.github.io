@@ -40,11 +40,16 @@
         </label>
         <button class="btn" type="submit" style="width:100%">登入</button>
         <p class="login-note">管理員可在後台新增專員與其他管理員帳號。</p>
+        <p class="login-version" id="admin-version">v—</p>
       </form>
     </section>
   </main>
+  <script src="/admin/version.js"></script>
   <script>
     (async function () {
+      var versionEl = document.getElementById("admin-version");
+      if (versionEl && window.ADMIN_VERSION) versionEl.textContent = "v" + window.ADMIN_VERSION;
+
       try {
         const me = await fetch("/api/auth/me", { credentials: "same-origin" });
         if (me.ok) {

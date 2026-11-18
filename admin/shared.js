@@ -64,6 +64,13 @@
     return '<span class="' + cls + '">' + esc(label) + "</span>";
   }
 
+  function renderVersion() {
+    var versionEl = document.getElementById("admin-version");
+    if (!versionEl) return;
+    var version = window.ADMIN_VERSION || "";
+    versionEl.textContent = version ? "v" + version : "v—";
+  }
+
   function renderShellUser(user) {
     var nameEl = document.getElementById("admin-user");
     var roleEl = document.getElementById("admin-role");
@@ -81,9 +88,11 @@
     }
     var usersNav = document.getElementById("nav-users");
     if (usersNav) usersNav.hidden = user.role !== "admin";
+    renderVersion();
   }
 
   async function ensureAuth() {
+    renderVersion();
     var me = await api("/api/auth/me");
     renderShellUser(me);
     return me;
@@ -144,6 +153,7 @@
     ensureAuth: ensureAuth,
     bindLogout: bindLogout,
     renderShellUser: renderShellUser,
+    renderVersion: renderVersion,
     resizeImageFile: resizeImageFile
   };
 })(window);
