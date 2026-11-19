@@ -8,6 +8,7 @@
     closed: "已結案",
     spam: "垃圾"
   };
+  var STATUS_KEYS = ["new", "in_progress", "quoted", "closed", "spam"];
 
   var state = {
     status: "all",
@@ -67,11 +68,24 @@
     }).join("");
   }
 
+  function statusList() {
+    var fromMeta = state.meta && Array.isArray(state.meta.statuses) ? state.meta.statuses : [];
+    return fromMeta.length ? fromMeta : STATUS_KEYS;
+  }
+
   function statusOptions(selected) {
-    return state.meta.statuses.map(function (status) {
+    return statusList().map(function (status) {
       return '<option value="' + S.esc(status) + '"' + (status === selected ? " selected" : "") + ">" +
         S.esc(STATUS_LABELS[status] || status) + "</option>";
     }).join("");
+  }
+
+  function revealUpdatedStatus(item) {
+    if (!item || !item.status) return;
+    if (state.status && state.status !== "all" && item.status !== state.status) {
+      state.status = "all";
+      if (statusFilter) statusFilter.value = "all";
+    }
   }
 
   function formField(name, label, value, attrs) {
@@ -112,7 +126,7 @@
           formField("weight", "重量 (kg)", data.weight, "") +
           formField("volume", "體積 (cbm)", data.volume, "") +
           formField("ready", "可出貨日 *", data.ready, "type=\"date\" required") +
-          '<label class="field"><span>狀態</span><select name="status">' + statusOptions(data.status || "new") + "</select></label>" +
+          '<label class="field"><span>狀態 *</span><select name="status" required>' + statusOptions(data.status || "new") + "</select></label>" +
           '<label class="field span-2"><span>補充說明</span><textarea name="message">' + S.esc(data.message || "") + "</textarea></label>" +
           '<label class="field span-2"><span>內部備註</span><textarea name="notes">' + S.esc(data.notes || "") + "</textarea></label>" +
         "</div>" +
@@ -156,12 +170,36 @@
       "</dl>" +
       '<div class="detail-actions">' +
         '<button class="btn primary" type="button" id="edit-btn">編輯</button>' +
-        '<a class="btn ghost" href="mailto:' + S.esc(item.email) +
-          "?subject=" + encodeURIComponent("Re: Northgo " + item.reference) + '">回信客戶</a>' +
+        '<button class="btn ghost" type="button" id="reply-quote-btn">回信報價</button>' +
         '<button class="btn danger" type="button" id="delete-btn">刪除</button>' +
         '<button class="btn ghost" type="button" data-close-modal>關閉</button>' +
       "</div>"
     );
+  }
+
+  function showFormError(message) {
+    var form = document.getElementById("inquiry-form");
+    if (!form) {
+      S.toast(message, true);
+      return;
+    }
+    var existing = form.querySelector(".form-error");
+    if (!existing) {
+      existing = document.createElement("p");
+      existing.className = "form-error";
+      existing.setAttribute("role", "alert");
+      var actions = form.querySelector(".detail-actions");
+      if (actions) form.insertBefore(existing, actions);
+      else form.appendChild(existing);
+    }
+    existing.hidden = false;
+    existing.textContent = message;
+    S.toast(message, true);
+  }
+
+  function clearFormError() {
+    var existing = document.querySelector("#inquiry-form .form-error");
+    if (existing) existing.hidden = true;
   }
 
   function bindModalActions() {
@@ -169,8 +207,9 @@
     if (form) {
       form.addEventListener("submit", function (event) {
         event.preventDefault();
+        clearFormError();
         saveForm(form).catch(function (error) {
-          if (error.message !== "unauthorized") S.toast(error.message, true);
+          if (error.message !== "unauthorized") showFormError(error.message || "儲存失敗");
         });
       });
     }
@@ -179,6 +218,14 @@
       editBtn.addEventListener("click", function () {
         state.mode = "edit";
         openModalForSelection();
+      });
+    }
+    var replyBtn = document.getElementById("reply-quote-btn");
+    if (replyBtn) {
+      replyBtn.addEventListener("click", function () {
+        replyQuote().catch(function (error) {
+          if (error.message !== "unauthorized") S.toast(error.message || "回信報價失敗", true);
+        });
       });
     }
     var deleteBtn = document.getElementById("delete-btn");
@@ -224,13 +271,23 @@
       ready: String(data.get("ready") || "").trim(),
       message: String(data.get("message") || "").trim(),
       locale: String(data.get("locale") || "").trim(),
-      status: String(data.get("status") || "new").trim(),
+      status: String(data.get("status") || "").trim(),
       notes: String(data.get("notes") || "").trim()
     };
   }
 
   async function saveForm(form) {
     var payload = readForm(form);
+    if (!payload.status) {
+      throw new Error("請選擇狀態");
+    }
+    if (!STATUS_KEYS.includes(payload.status)) {
+      throw new Error("狀態不正確，請重新選擇");
+    }
+    if (!state.selected || !state.selected.id) {
+      if (state.mode !== "create") throw new Error("找不到要儲存的詢價");
+    }
+
     if (state.mode === "create") {
       var created = await S.api("/api/inquiries", {
         method: "POST",
@@ -250,11 +307,47 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
-    S.toast("已儲存變更");
+    if (!updated || !updated.item) {
+      throw new Error("儲存失敗：伺服器未回傳資料");
+    }
+    if (updated.item.status !== payload.status) {
+      throw new Error(
+        "狀態未能寫入資料庫（仍為「" +
+          (STATUS_LABELS[updated.item.status] || updated.item.status || "未知") +
+          "」），請重試"
+      );
+    }
+    S.toast("已儲存變更（" + (STATUS_LABELS[updated.item.status] || updated.item.status) + "）");
     state.selected = updated.item;
     state.mode = "view";
+    revealUpdatedStatus(updated.item);
     S.closeModal();
     await loadList();
+  }
+
+  async function replyQuote() {
+    if (!state.selected || !state.selected.id) return;
+    var item = state.selected;
+    var mailto =
+      "mailto:" + String(item.email || "") +
+      "?subject=" + encodeURIComponent("Re: Northgo " + (item.reference || ""));
+
+    if (item.status !== "quoted" && item.status !== "closed" && item.status !== "spam") {
+      var updated = await S.api("/api/inquiries/" + encodeURIComponent(item.id), {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "quoted" })
+      });
+      if (!updated || !updated.item || updated.item.status !== "quoted") {
+        throw new Error("回信報價失敗：無法將狀態更新為「已報價」");
+      }
+      state.selected = updated.item;
+      revealUpdatedStatus(updated.item);
+      await loadList();
+      S.toast("已將狀態更新為「已報價」");
+    }
+
+    window.location.href = mailto;
   }
 
   async function loadMeta() {

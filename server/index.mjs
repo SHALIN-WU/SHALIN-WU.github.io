@@ -209,8 +209,16 @@ async function handleApi(req, res, url) {
           patch = parsed.data;
         } else {
           patch = {};
-          if (body.status != null) patch.status = body.status;
+          if (body.status != null) {
+            if (typeof body.status !== "string" || !body.status.trim()) {
+              return sendJson(res, 400, { error: "狀態不正確" });
+            }
+            patch.status = body.status.trim();
+          }
           if (body.notes != null) patch.notes = body.notes;
+          if (!Object.keys(patch).length) {
+            return sendJson(res, 400, { error: "No fields to update." });
+          }
         }
 
         const item = await updateInquiry(id, patch);

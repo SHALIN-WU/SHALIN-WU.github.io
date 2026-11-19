@@ -164,8 +164,8 @@ function freightHero(locale, service, crumbItems) {
     `<li><a href="${href(locale, byId[id].slug)}">${esc(t(byId[id].title, locale))}</a></li>`
   ).join("");
   return `<header class="page-hero page-hero--freight">
-      <img class="page-hero-bg" src="/assets/freight-hero.jpg" alt="" width="1280" height="720" fetchpriority="high" decoding="async">
-      <div class="wrap">
+      <img class="page-hero-bg" src="/assets/freight-hero-bg.jpg" alt="" width="1280" height="720" fetchpriority="high" decoding="async">
+      <div class="wrap hero-copy">
         ${crumbs(locale, crumbItems)}
         <p class="eyebrow">${esc(t(service.eyebrow, locale))}</p>
         <h1>${esc(t(service.title, locale))}</h1>
@@ -195,8 +195,9 @@ function renderHome(locale) {
   const pills = offices.map((office) => `<a href="${href(locale, "locations")}#${office.id}" data-track="office_click" data-office="${office.id}">${esc(t(office.name, locale))}${office.hq ? ` · ${esc(t(ui.hq, locale))}` : ""}</a>`).join("");
   const trusts = home.trusts.map((item) => `<article><h3>${esc(t(item.title, locale))}</h3><p>${esc(t(item.text, locale))}</p></article>`).join("");
   const stats = home.stats.map((item) => `<div><dt>${esc(t(item.label, locale))}</dt><dd>${esc(t(item.value, locale))}</dd></div>`).join("");
-  return `<header class="hero"><div class="wrap hero-layout">
-      <div class="hero-copy">
+  return `<header class="hero hero--bleed">
+      <img class="hero-bg" src="/assets/northgo-hero.jpg" alt="" width="1280" height="720" fetchpriority="high" decoding="async">
+      <div class="wrap hero-copy">
         <p class="eyebrow">${esc(t(home.eyebrow, locale))}</p>
         <h1>${accent(t(home.title, locale), t(home.accent, locale))}</h1>
         <p class="lead">${esc(t(home.lead, locale))}</p>
@@ -206,10 +207,7 @@ function renderHome(locale) {
         </div>
         <dl class="hero-stats">${stats}</dl>
       </div>
-      <figure class="hero-visual" aria-hidden="true">
-        <img src="/assets/northgo-hero.jpg" alt="" width="1024" height="576" fetchpriority="high" decoding="async">
-      </figure>
-    </div></header>
+    </header>
     <section class="section"><div class="wrap">
       <h2>${esc(t(home.servicesTitle, locale))}</h2>
       <p class="intro">${esc(t(home.servicesIntro, locale))}</p>

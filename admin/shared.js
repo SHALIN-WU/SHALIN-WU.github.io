@@ -48,7 +48,7 @@
     el.textContent = message;
     el.classList.toggle("is-error", Boolean(isError));
     clearTimeout(toast._timer);
-    toast._timer = setTimeout(function () { el.hidden = true; }, 2600);
+    toast._timer = setTimeout(function () { el.hidden = true; }, isError ? 5600 : 2600);
   }
 
   async function api(url, options) {

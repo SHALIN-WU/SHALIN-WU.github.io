@@ -39,8 +39,16 @@ async function updateHandler(context, fullPreferred) {
       patch = parsed.data;
     } else {
       patch = {};
-      if (body.status != null) patch.status = body.status;
+      if (body.status != null) {
+        if (typeof body.status !== "string" || !body.status.trim()) {
+          return json({ error: "狀態不正確" }, 400);
+        }
+        patch.status = body.status.trim();
+      }
       if (body.notes != null) patch.notes = body.notes;
+      if (!Object.keys(patch).length) {
+        return json({ error: "No fields to update." }, 400);
+      }
     }
 
     const item = await updateInquiry(context.env.DB, context.params.id, patch);
