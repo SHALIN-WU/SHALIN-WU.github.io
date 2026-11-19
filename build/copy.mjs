@@ -220,7 +220,7 @@ export const countries = [
 ];
 
 export const home = {
-  eyebrow: L("Northgo · Since 1988", "NORTHGO · 自 1988", "NORTHGO · 1988年創業", "NORTHGO · Từ 1988"),
+  eyebrow: L("Northgo · Since 1988", "Northgo · 自 1988 年", "Northgo · 1988年創業", "Northgo · Từ năm 1988"),
   title: L("Making logistics effortless.", "讓物流變得輕鬆。", "物流を、手間なく。", "Logistics dễ dàng hơn."),
   accent: L("effortless.", "輕鬆", "手間なく", "dễ dàng"),
   seoTitle: L(
