@@ -1,6 +1,6 @@
 {
   "name": "northgo-website",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "private": true,
   "type": "module",
   "description": "Northgo static site with Cloudflare Pages Functions and D1 enquiry admin",

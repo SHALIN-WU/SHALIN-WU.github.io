@@ -9,7 +9,7 @@ import { ui, countries, home, about, legal, servicesIndex, locationsCopy, contac
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SITE = "https://www.northgo.com";
 const DATE = "2026-11-11";
-const VERSION = "v2.3";
+const VERSION = "v2.5";
 const OG = "https://cdn.prod.website-files.com/66fc7398f8b5d731b52bcefb/670eea7be3b8c90fbb9dd350_NG_Planes-Duotone-p-500.webp";
 
 const htmlLang = { en: "en", "zh-tw": "zh-Hant", ja: "ja", vi: "vi" };
