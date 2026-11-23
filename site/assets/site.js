@@ -295,7 +295,7 @@
     submitButton.textContent = copy.submitting || "Sending…";
 
     try {
-      var response = await fetch("/api/inquiries", {
+      var response = await fetch("https://northgo-73a.pages.dev/api/inquiries", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
