@@ -647,3 +647,31 @@ button { cursor: pointer; }
   .filter-field.search,
   .filter-field.narrow { flex: 1 1 100%; }
 }
+
+.content-form { padding: 1.15rem 1.2rem 1.4rem; }
+.content-group {
+  margin: 0.2rem 0 0.85rem;
+  font-size: 1.02rem;
+}
+.content-group:not(:first-of-type) { margin-top: 1.35rem; }
+.content-hint {
+  margin: 0 0 1rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.locale-switch { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+.locale-switch button {
+  min-height: 2.45rem;
+  padding: 0.45rem 0.95rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--navy);
+  font-weight: 700;
+  cursor: pointer;
+}
+.locale-switch button[aria-selected="true"] {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: #fff;
+}

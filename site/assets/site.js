@@ -54,6 +54,86 @@
     });
   });
 
+  function cmsOrigin() {
+    var host = location.hostname;
+    if (host === "localhost" || host === "127.0.0.1" || host.slice(-10) === ".pages.dev") return "";
+    return "https://northgo-73a.pages.dev";
+  }
+
+  function pageLocale() {
+    var path = location.pathname;
+    if (path === "/zh-tw" || path.indexOf("/zh-tw/") === 0) return "zh-tw";
+    if (path === "/ja" || path.indexOf("/ja/") === 0) return "ja";
+    if (path === "/vi" || path.indexOf("/vi/") === 0) return "vi";
+    return "en";
+  }
+
+  function blockText(blocks, key) {
+    var value = blocks[key];
+    if (typeof value !== "string" || !value.replace(/^\s+|\s+$/g, "")) return "";
+    return value;
+  }
+
+  function renderHeroTitle(heading, title, accent) {
+    var word = accent;
+    if (!word) {
+      var current = heading.querySelector("[data-cms='home.hero.accent']");
+      word = current ? current.textContent : "";
+    }
+    heading.textContent = "";
+    if (word && title.indexOf(word) !== -1) {
+      var index = title.indexOf(word);
+      heading.appendChild(document.createTextNode(title.slice(0, index)));
+      var em = document.createElement("em");
+      em.setAttribute("data-cms", "home.hero.accent");
+      em.textContent = word;
+      heading.appendChild(em);
+      heading.appendChild(document.createTextNode(title.slice(index + word.length)));
+      return;
+    }
+    heading.textContent = title;
+  }
+
+  function applyBlocks(blocks) {
+    var title = blockText(blocks, "home.hero.title");
+    var accent = blockText(blocks, "home.hero.accent");
+    document.querySelectorAll("[data-cms]").forEach(function (el) {
+      var key = el.getAttribute("data-cms");
+      if (el.querySelector("[data-cms]")) {
+        if (key === "home.hero.title" && title) renderHeroTitle(el, title, accent);
+        return;
+      }
+      var value = blockText(blocks, key);
+      if (!value) return;
+      el.textContent = value;
+      if (key === "site.phone" && el.tagName === "A") {
+        var tel = value.replace(/[^\d+]/g, "");
+        if (tel) el.setAttribute("href", "tel:" + tel);
+      }
+      if (key === "site.email" && el.tagName === "A") {
+        var email = value.replace(/^\s+|\s+$/g, "");
+        if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) el.setAttribute("href", "mailto:" + email);
+      }
+    });
+  }
+
+  function applyPublishedContent() {
+    if (!document.querySelector("[data-cms]")) return;
+    var locale = pageLocale();
+    fetch(cmsOrigin() + "/api/public/content?locale=" + encodeURIComponent(locale), { credentials: "omit" })
+      .then(function (response) {
+        if (!response.ok) throw new Error("cms");
+        return response.json();
+      })
+      .then(function (payload) {
+        if (!payload || !payload.blocks) return;
+        applyBlocks(payload.blocks);
+      })
+      .catch(function () {});
+  }
+
+  applyPublishedContent();
+
   var form = document.getElementById("enquiry-form");
   if (!form) return;
 

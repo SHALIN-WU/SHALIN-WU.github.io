@@ -12,6 +12,8 @@
     "db:local": "wrangler d1 execute northgo-inquiries --local --file=./migrations/0001_init.sql && wrangler d1 execute northgo-inquiries --local --file=./migrations/0002_users.sql && wrangler d1 execute northgo-inquiries --local --file=./migrations/0003_avatars.sql",
     "db:remote": "wrangler d1 execute northgo-inquiries --remote --file=./migrations/0001_init.sql && wrangler d1 execute northgo-inquiries --remote --file=./migrations/0002_users.sql && wrangler d1 execute northgo-inquiries --remote --file=./migrations/0003_avatars.sql",
     "db:users": "wrangler d1 execute northgo-inquiries --remote --file=./migrations/0002_users.sql && wrangler d1 execute northgo-inquiries --remote --file=./migrations/0003_avatars.sql",
+    "db:cms:local": "wrangler d1 execute northgo-inquiries --local --file=./migrations/0004_cms.sql",
+    "db:cms": "wrangler d1 execute northgo-inquiries --remote --file=./migrations/0004_cms.sql",
     "deploy": "npm run prepare:dist && wrangler pages deploy dist --project-name=northgo",
     "hash-password": "node server/hash-password.mjs"
   },

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>網站內容｜Northgo 後台管理</title>
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin/admin.css">
+</head>
+<body>
+  <div class="admin-shell">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a class="brand-lockup" href="/admin/">
+          <span class="brand-name">Northgo</span>
+          <span class="brand-sub">後台管理</span>
+          <span class="brand-ver" id="admin-version">v—</span>
+        </a>
+        <div class="topbar-user">
+          <div class="user-chip">
+            <div class="avatar" id="admin-avatar">NG</div>
+            <div class="user-chip-meta">
+              <strong id="admin-user"></strong>
+              <span id="admin-handle"></span>
+            </div>
+            <span class="badge role-admin" id="admin-role"></span>
+          </div>
+          <a class="btn ghost" id="my-account-btn" href="/admin/users.html" hidden>我的帳號</a>
+          <button class="btn ghost" type="button" id="logout-btn">登出</button>
+        </div>
+      </div>
+    </header>
+
+    <nav class="tab-nav" aria-label="後台選單">
+      <div class="tab-nav-inner">
+        <a href="/admin/">客戶詢問</a>
+        <a class="is-active" href="/admin/content.html">網站內容</a>
+        <a id="nav-users" href="/admin/users.html" hidden>使用者</a>
+      </div>
+    </nav>
+
+    <main class="page">
+      <section class="panel">
+        <div class="toolbar">
+          <div class="locale-switch" id="locale-switch" role="tablist" aria-label="語系"></div>
+          <div class="toolbar-actions">
+            <button class="btn ghost" type="button" id="preview-btn">預覽此語系首頁</button>
+            <button class="btn ghost" type="button" id="reload-btn">重新載入</button>
+            <button class="btn primary" type="button" id="save-btn">儲存</button>
+          </div>
+        </div>
+        <form id="content-form" class="content-form"></form>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+  <script src="/admin/version.js"></script>
+  <script src="/admin/shared.js"></script>
+  <script src="/admin/content.js"></script>
+</body>
+</html>

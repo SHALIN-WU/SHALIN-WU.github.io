@@ -77,10 +77,11 @@ function esc(value) {
   }[ch]));
 }
 
-function accent(text, word) {
+function accent(text, word, emAttr) {
   const safe = esc(text);
+  const attr = emAttr ? ` ${emAttr}` : "";
   if (!word || !text.includes(word)) return safe;
-  return safe.replace(esc(word), `<em>${esc(word)}</em>`);
+  return safe.replace(esc(word), `<em${attr}>${esc(word)}</em>`);
 }
 
 function telHref(tel) {
@@ -198,9 +199,9 @@ function renderHome(locale) {
   return `<header class="hero hero--bleed">
       <img class="hero-bg" src="/assets/northgo-hero.jpg" alt="" width="1280" height="720" fetchpriority="high" decoding="async">
       <div class="wrap hero-copy">
-        <p class="eyebrow">${esc(t(home.eyebrow, locale))}</p>
-        <h1>${accent(t(home.title, locale), t(home.accent, locale))}</h1>
-        <p class="lead">${esc(t(home.lead, locale))}</p>
+        <p class="eyebrow" data-cms="home.hero.eyebrow">${esc(t(home.eyebrow, locale))}</p>
+        <h1 data-cms="home.hero.title">${accent(t(home.title, locale), t(home.accent, locale), 'data-cms="home.hero.accent"')}</h1>
+        <p class="lead" data-cms="home.hero.lead">${esc(t(home.lead, locale))}</p>
         <div class="hero-actions">
           <a class="btn" href="${href(locale, "contact")}#enquiry-form">${esc(t(home.enquire, locale))}</a>
           <a class="btn" href="${href(locale, "about")}">${esc(t(home.more, locale))}</a>
@@ -290,7 +291,7 @@ function renderLocations(locale) {
       <p>${esc(t(office.address, locale))}</p>
       <p><a href="${telHref(office.tel)}">${esc(t(ui.tel, locale))} ${esc(office.tel)}</a></p>
       ${fax}
-      <p><a href="mailto:${office.email}">${esc(office.email)}</a></p>
+      <p><a${office.hq ? ' data-cms="site.email"' : ""} href="mailto:${office.email}">${esc(office.email)}</a></p>
       <p class="actions">
         <a href="${esc(`https://www.google.com/maps/search/?api=1&query=${office.lat},${office.lng}`)}" target="_blank" rel="noopener">${esc(t(ui.maps, locale))}</a>
         <a href="${href(locale, "contact")}?office=${office.id}#enquiry-form" data-track="office_click" data-office="${office.id}">${esc(t(ui.enquireOffice, locale))}</a>
@@ -508,7 +509,7 @@ function footer(locale) {
     ["legal/disclaimer", ui.disclaimer]
   ].map(([slug, label]) => `<li><a href="${href(locale, slug)}">${esc(t(label, locale))}</a></li>`).join("");
   return `<footer class="site-footer"><div class="wrap foot-grid">
-      <div><a class="brand" href="${href(locale, "")}" aria-label="Northgo"><img src="/assets/logo-on-dark.svg" alt="" width="168" height="33"></a><p>${esc(t(ui.rights, locale))}</p><p><a href="${telHref(offices[0].tel)}">${esc(offices[0].tel)}</a></p></div>
+      <div><a class="brand" href="${href(locale, "")}" aria-label="Northgo"><img src="/assets/logo-on-dark.svg" alt="" width="168" height="33"></a><p>${esc(t(ui.rights, locale))}</p><p><a data-cms="site.phone" href="${telHref(offices[0].tel)}">${esc(offices[0].tel)}</a></p></div>
       <div><h2>${esc(t(ui.footerServices, locale))}</h2><ul>${serviceLinks}</ul></div>
       <div><h2>${esc(t(ui.footerCompany, locale))}</h2><ul>${company}</ul></div>
       <div><h2>${esc(t(ui.footerLegal, locale))}</h2><ul>${legalLinks}</ul></div>
