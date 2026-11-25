@@ -34,7 +34,7 @@ CREATE INDEX IF NOT EXISTS idx_admin_menus_parent ON admin_menus (parent_id, sor
 CREATE INDEX IF NOT EXISTS idx_admin_role_permissions_role ON admin_role_permissions (role_id);
 
 INSERT OR IGNORE INTO admin_roles (id, key, name, description, is_system, created_at, updated_at) VALUES
-  ('role-admin', 'admin', '管理者', '可使用全部後台功能，權限不可縮減。', 1, '2026-11-25T00:00:00.000Z', '2026-11-25T00:00:00.000Z'),
+  ('role-admin', 'admin', '管理者', '可使用全部後台功能。', 1, '2026-11-25T00:00:00.000Z', '2026-11-25T00:00:00.000Z'),
   ('role-editor', 'editor', '編輯者', '可處理客戶詢問，並檢視網站內容、媒體與動態頁面。', 1, '2026-11-25T00:00:00.000Z', '2026-11-25T00:00:00.000Z');
 
 INSERT OR IGNORE INTO admin_role_permissions (role_id, permission) VALUES

@@ -43,21 +43,34 @@
       <h1 class="page-title"><span class="page-mark" aria-hidden="true"></span>選單管理</h1>
       <section class="panel">
         <div class="toolbar">
-          <p class="media-hint" id="menus-hint">側欄依角色權限顯示。系統選單可以改名、隱藏或調整順序。</p>
+          <label class="filter-field search">
+            <span>搜尋</span>
+            <input id="menu-search" type="search" placeholder="名稱或功能" autocomplete="off">
+          </label>
+          <label class="filter-field narrow">
+            <span>類型</span>
+            <select id="menu-type">
+              <option value="all">全部</option>
+              <option value="group">群組</option>
+              <option value="item">功能</option>
+            </select>
+          </label>
           <div class="toolbar-actions">
             <button class="btn ghost" type="button" id="reload-btn">重新載入</button>
-            <button class="btn ghost" type="button" id="create-group-btn">新增群組</button>
-            <button class="btn primary" type="button" id="create-item-btn">新增項目</button>
+            <button class="btn primary" type="button" id="create-btn">新增選單</button>
           </div>
         </div>
+        <p class="menus-note" id="menus-hint">左側功能選單依這裡的群組、排序與是否顯示來排列。點箭頭可展開或收合群組。「選單管理」是進入這個畫面的入口，不能刪除或停用。</p>
         <div class="table-wrap">
           <table class="data-table" aria-label="後台選單">
             <thead>
               <tr>
                 <th>名稱</th>
-                <th>連結</th>
+                <th>類型</th>
+                <th>對應功能</th>
+                <th class="col-num">排序</th>
+                <th>顯示</th>
                 <th>權限</th>
-                <th>狀態</th>
                 <th class="actions-col">操作</th>
               </tr>
             </thead>

@@ -1,5 +1,12 @@
 (function (global) {
-  var ROLE_LABELS = { admin: "管理者", editor: "編輯者", staff: "編輯者" };
+  var ROLE_LABELS = { admin: "管理員", editor: "編輯者", staff: "編輯者", sales: "業務", support: "客服" };
+
+  function roleClass(role) {
+    if (role === "admin") return "role-admin";
+    if (role === "sales") return "role-sales";
+    if (role === "support") return "role-support";
+    return "role-editor";
+  }
 
   function icon(paths) {
     return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + paths + "</svg>";
@@ -289,8 +296,8 @@
     if (roleEl) {
       var label = user.roleName || ROLE_LABELS[user.role] || user.role || "";
       roleEl.innerHTML = (user.role === "admin" ? ICONS.star : ICONS.user) + " " + esc(label);
-      roleEl.classList.remove("role-admin", "role-staff", "role-editor");
-      roleEl.classList.add(user.role === "admin" ? "role-admin" : "role-editor");
+      roleEl.classList.remove("role-admin", "role-staff", "role-editor", "role-sales", "role-support");
+      roleEl.classList.add(roleClass(user.role));
     }
     if (avatarEl) {
       if (user.avatarUrl) {
@@ -415,6 +422,7 @@
 
   global.AdminShared = {
     ROLE_LABELS: ROLE_LABELS,
+    roleClass: roleClass,
     ICONS: ICONS,
     esc: esc,
     initials: initials,

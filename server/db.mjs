@@ -7,7 +7,8 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DATA_DIR = path.join(ROOT, "data");
 const DB_PATH = path.join(DATA_DIR, "inquiries.json");
 
-const STATUSES = ["new", "in_progress", "quoted", "closed", "spam"];
+const STATUSES = ["new", "in_progress", "replied"];
+const LEGACY_STATUS = { quoted: "replied", closed: "replied", spam: "new" };
 
 let cache = null;
 let writeQueue = Promise.resolve();
@@ -26,6 +27,16 @@ async function ensureLoaded() {
       version: 1,
       inquiries: Array.isArray(parsed.inquiries) ? parsed.inquiries : []
     };
+    let dirty = false;
+    for (const row of cache.inquiries) {
+      const next = LEGACY_STATUS[row.status] || row.status;
+      if (next !== row.status) {
+        row.status = STATUSES.includes(next) ? next : "new";
+        dirty = true;
+      }
+      if (row.assigneeId == null) row.assigneeId = "";
+    }
+    if (dirty) await persist();
   } catch (error) {
     if (error && error.code !== "ENOENT") throw error;
     cache = emptyDb();

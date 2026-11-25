@@ -2,13 +2,11 @@
   var S = window.AdminShared;
   var STATUS_LABELS = {
     all: "全部",
-    new: "新詢價",
+    new: "新進",
     in_progress: "處理中",
-    quoted: "已報價",
-    closed: "已結案",
-    spam: "垃圾"
+    replied: "已回覆"
   };
-  var STATUS_KEYS = ["new", "in_progress", "quoted", "closed", "spam"];
+  var STATUS_KEYS = ["new", "in_progress", "replied"];
 
   var state = {
     status: "all",
@@ -19,7 +17,16 @@
     items: [],
     selected: null,
     mode: "view",
-    canEdit: true,
+    canEdit: false,
+    canCreate: false,
+    canDelete: false,
+    canWrite: false,
+    canAssign: false,
+    canEditFields: false,
+    ownOnly: false,
+    allowedStatuses: STATUS_KEYS.slice(),
+    createStatuses: STATUS_KEYS.slice(),
+    assignees: [],
     meta: { offices: [], services: [], locales: [], statuses: [] }
   };
 
@@ -33,6 +40,7 @@
   var pageSizeSelect = document.getElementById("page-size");
   var refreshBtn = document.getElementById("refresh-btn");
   var createBtn = document.getElementById("create-btn");
+  var accessHint = document.getElementById("access-hint");
   var settingsBtn = document.getElementById("settings-btn");
   var settingsMenu = document.getElementById("settings-menu");
 
@@ -74,11 +82,40 @@
     return fromMeta.length ? fromMeta : STATUS_KEYS;
   }
 
-  function statusOptions(selected) {
-    return statusList().map(function (status) {
+  function statusOptions(selected, keys) {
+    var list = keys && keys.length ? keys : statusList();
+    return list.map(function (status) {
       return '<option value="' + S.esc(status) + '"' + (status === selected ? " selected" : "") + ">" +
         S.esc(STATUS_LABELS[status] || status) + "</option>";
     }).join("");
+  }
+
+  function statusChoices(current, creating) {
+    var base = creating
+      ? (state.createStatuses.length ? state.createStatuses.slice() : STATUS_KEYS.slice())
+      : (state.allowedStatuses.length ? state.allowedStatuses.slice() : STATUS_KEYS.slice());
+    if (!creating && current && base.indexOf(current) < 0) base.unshift(current);
+    return base;
+  }
+
+  function assigneeOptions(selected) {
+    var known = false;
+    var html = '<option value="">未指派</option>' + state.assignees.map(function (user) {
+      if (user.id === selected) known = true;
+      var label = (user.displayName || user.username || "使用者") + (user.roleName ? " · " + user.roleName : "");
+      return '<option value="' + S.esc(user.id) + '"' + (user.id === selected ? " selected" : "") + ">" +
+        S.esc(label) + "</option>";
+    }).join("");
+    if (selected && !known) {
+      html += '<option value="' + S.esc(selected) + '" selected>目前負責人</option>';
+    }
+    return html;
+  }
+
+  function assigneeField(selected) {
+    if (!state.canAssign) return "";
+    return '<label class="field span-2"><span>負責客服</span><select name="assigneeId">' +
+      assigneeOptions(selected || "") + "</select></label>";
   }
 
   function revealUpdatedStatus(item) {
@@ -127,14 +164,15 @@
           formField("weight", "重量 (kg)", data.weight, "") +
           formField("volume", "體積 (cbm)", data.volume, "") +
           formField("ready", "可出貨日 *", data.ready, "type=\"date\" required") +
-          '<label class="field"><span>狀態 *</span><select name="status" required>' + statusOptions(data.status || "new") + "</select></label>" +
+          '<label class="field"><span>狀態 *</span><select name="status" required>' + statusOptions(data.status || "new", statusChoices(data.status, mode === "create")) + "</select></label>" +
+          assigneeField(data.assigneeId) +
           '<label class="field span-2"><span>補充說明</span><textarea name="message">' + S.esc(data.message || "") + "</textarea></label>" +
           '<label class="field span-2"><span>內部備註</span><textarea name="notes">' + S.esc(data.notes || "") + "</textarea></label>" +
         "</div>" +
         '<div class="detail-actions">' +
           '<button class="btn primary" type="submit">' + (mode === "create" ? "建立" : "儲存") + "</button>" +
           '<button class="btn ghost" type="button" data-close-modal>取消</button>' +
-          (mode === "edit" ? '<button class="btn danger" type="button" id="delete-btn">刪除</button>' : "") +
+          (mode === "edit" && state.canDelete ? '<button class="btn danger" type="button" id="delete-btn">刪除</button>' : "") +
         "</div>" +
       "</form>"
     );
@@ -165,16 +203,41 @@
         row("可出貨日", item.ready) +
         row("語系", item.locale) +
         row("狀態", STATUS_LABELS[item.status] || item.status) +
+        row("負責人", item.assigneeName || "未指派") +
         row("補充說明", item.message) +
         row("內部備註", item.notes) +
         row("更新時間", S.formatDate(item.updatedAt)) +
       "</dl>" +
       '<div class="detail-actions">' +
-        '<button class="btn primary" type="button" id="edit-btn">編輯</button>' +
-        '<button class="btn ghost" type="button" id="reply-quote-btn">回信報價</button>' +
-        '<button class="btn danger" type="button" id="delete-btn">刪除</button>' +
+        (state.canEdit ? '<button class="btn primary" type="button" id="edit-btn">' + (state.canEditFields ? "編輯" : "更新狀態") + "</button>" : "") +
+        (state.canWrite ? '<button class="btn ghost" type="button" id="reply-quote-btn">回信並標為已回覆</button>' : "") +
+        (state.canDelete ? '<button class="btn danger" type="button" id="delete-btn">刪除</button>' : "") +
         '<button class="btn ghost" type="button" data-close-modal>關閉</button>' +
       "</div>"
+    );
+  }
+
+  function renderLimited(item) {
+    var hint = state.canWrite
+      ? "可以修改狀態與備註。不能刪除這筆詢問。"
+      : "只能把狀態改成處理中，或維持目前狀態並更新備註。不能改成已回覆，也不能刪除。";
+    return (
+      '<form id="inquiry-form" class="inquiry-form" novalidate>' +
+        "<h2>更新狀態</h2>" +
+        '<p class="ref">' + S.esc(item.reference || "") + " · " + S.esc((item.first || "") + " " + (item.last || "")).trim() + "</p>" +
+        '<p class="media-hint">' + S.esc(hint) + "</p>" +
+        '<div class="form-grid">' +
+          '<label class="field"><span>狀態 *</span><select name="status" required>' +
+            statusOptions(item.status || "new", statusChoices(item.status, false)) +
+          "</select></label>" +
+          assigneeField(item.assigneeId) +
+          '<label class="field span-2"><span>內部備註</span><textarea name="notes">' + S.esc(item.notes || "") + "</textarea></label>" +
+        "</div>" +
+        '<div class="detail-actions">' +
+          '<button class="btn primary" type="submit">儲存</button>' +
+          '<button class="btn ghost" type="button" data-close-modal>取消</button>' +
+        "</div>" +
+      "</form>"
     );
   }
 
@@ -242,8 +305,10 @@
   function openModalForSelection() {
     if (state.mode === "create") {
       S.openModal(renderForm(emptyForm(), "create"), true);
-    } else if (state.mode === "edit" && state.selected) {
+    } else if (state.mode === "edit" && state.selected && state.canEditFields) {
       S.openModal(renderForm(state.selected, "edit"), true);
+    } else if (state.mode === "edit" && state.selected) {
+      S.openModal(renderLimited(state.selected), false);
     } else if (state.selected) {
       S.openModal(renderReadonly(state.selected), true);
     } else {
@@ -277,19 +342,28 @@
     };
   }
 
+  function withAssignee(payload, form) {
+    if (form.querySelector('[name="assigneeId"]')) {
+      payload.assigneeId = String(new FormData(form).get("assigneeId") || "");
+    }
+    return payload;
+  }
+
   async function saveForm(form) {
-    var payload = readForm(form);
+    var creating = state.mode === "create";
+    var payload = withAssignee(readForm(form), form);
+    var choices = statusChoices(state.selected && state.selected.status, creating);
     if (!payload.status) {
       throw new Error("請選擇狀態");
     }
-    if (!STATUS_KEYS.includes(payload.status)) {
+    if (choices.indexOf(payload.status) < 0) {
       throw new Error("狀態不正確，請重新選擇");
     }
-    if (!state.selected || !state.selected.id) {
-      if (state.mode !== "create") throw new Error("找不到要儲存的詢價");
+    if (!creating && (!state.selected || !state.selected.id)) {
+      throw new Error("找不到要儲存的詢價");
     }
 
-    if (state.mode === "create") {
+    if (creating) {
       var created = await S.api("/api/inquiries", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -303,10 +377,18 @@
       return;
     }
 
+    var requestBody = payload;
+    var method = "PUT";
+    if (!state.canEditFields) {
+      method = "PATCH";
+      requestBody = { status: payload.status, notes: payload.notes };
+      if (Object.prototype.hasOwnProperty.call(payload, "assigneeId")) requestBody.assigneeId = payload.assigneeId;
+    }
+
     var updated = await S.api("/api/inquiries/" + encodeURIComponent(state.selected.id), {
-      method: "PUT",
+      method: method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(requestBody)
     });
     if (!updated || !updated.item) {
       throw new Error("儲存失敗：伺服器未回傳資料");
@@ -327,25 +409,25 @@
   }
 
   async function replyQuote() {
-    if (!state.selected || !state.selected.id) return;
+    if (!state.canWrite || !state.selected || !state.selected.id) return;
     var item = state.selected;
     var mailto =
       "mailto:" + String(item.email || "") +
       "?subject=" + encodeURIComponent("Re: Northgo " + (item.reference || ""));
 
-    if (item.status !== "quoted" && item.status !== "closed" && item.status !== "spam") {
+    if (item.status !== "replied") {
       var updated = await S.api("/api/inquiries/" + encodeURIComponent(item.id), {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "quoted" })
+        body: JSON.stringify({ status: "replied" })
       });
-      if (!updated || !updated.item || updated.item.status !== "quoted") {
-        throw new Error("回信報價失敗：無法將狀態更新為「已報價」");
+      if (!updated || !updated.item || updated.item.status !== "replied") {
+        throw new Error("無法將狀態更新為「已回覆」");
       }
       state.selected = updated.item;
       revealUpdatedStatus(updated.item);
       await loadList();
-      S.toast("已將狀態更新為「已報價」");
+      S.toast("已將狀態更新為「已回覆」");
     }
 
     window.location.href = mailto;
@@ -358,6 +440,12 @@
         return '<option value="' + S.esc(office.id) + '">' + S.esc(office.name) + "</option>";
       }).join("");
     officeFilter.value = state.office;
+    var current = state.status || "all";
+    statusFilter.innerHTML = '<option value="all">全部</option>' + statusList().map(function (status) {
+      return '<option value="' + S.esc(status) + '">' + S.esc(STATUS_LABELS[status] || status) + "</option>";
+    }).join("");
+    statusFilter.value = current === "all" || statusList().indexOf(current) >= 0 ? current : "all";
+    state.status = statusFilter.value || "all";
   }
 
   function renderTable() {
@@ -366,7 +454,7 @@
 
     if (!pageData.items.length) {
       tableBody.innerHTML =
-        '<tr><td colspan="7"><p class="empty">目前沒有符合條件的詢價。</p></td></tr>';
+        '<tr><td colspan="8"><p class="empty">目前沒有符合條件的詢價。</p></td></tr>';
     } else {
       tableBody.innerHTML = pageData.items.map(function (item) {
         var name = (item.company || ((item.first || "") + " " + (item.last || "")).trim() || "—");
@@ -384,12 +472,16 @@
             '<td><span class="badge ' + S.esc(item.status || "") + '">' +
               S.esc(STATUS_LABELS[item.status] || item.status || "—") +
             "</span></td>" +
+            "<td>" + S.esc(item.assigneeName || "未指派") + "</td>" +
             "<td>" + S.esc(S.formatDate(item.createdAt, true)) + "</td>" +
             '<td class="actions-col"><div class="actions">' +
               (state.canEdit
-                ? '<button class="icon-btn edit" type="button" data-action="edit" title="編輯" aria-label="編輯">' +
-                  S.ICONS.edit + "</button>" +
-                  '<button class="icon-btn delete" type="button" data-action="delete" title="刪除" aria-label="刪除">' +
+                ? '<button class="icon-btn edit" type="button" data-action="edit" title="' +
+                  (state.canEditFields ? "編輯" : "更新狀態") + '" aria-label="編輯">' +
+                  S.ICONS.edit + "</button>"
+                : "") +
+              (state.canDelete
+                ? '<button class="icon-btn delete" type="button" data-action="delete" title="刪除" aria-label="刪除">' +
                   S.ICONS.trash + "</button>"
                 : "") +
             "</div></td>" +
@@ -412,8 +504,30 @@
     params.set("limit", "500");
     var data = await S.api("/api/inquiries?" + params.toString());
     state.items = data.items || [];
-    state.canEdit = data.canEdit !== false;
-    if (createBtn) createBtn.hidden = !state.canEdit;
+    var access = data.access || {};
+    state.canEdit = access.canEdit != null ? Boolean(access.canEdit) : data.canEdit !== false;
+    state.canCreate = access.canCreate != null ? Boolean(access.canCreate) : state.canEdit;
+    state.canDelete = Boolean(access.canDelete);
+    state.canWrite = Boolean(access.canWrite) || (access.allowedStatuses || []).indexOf("replied") >= 0;
+    state.canAssign = Boolean(access.canAssign);
+    state.canEditFields = Boolean(access.canEditFields);
+    state.ownOnly = Boolean(access.ownOnly);
+    state.allowedStatuses = access.allowedStatuses && access.allowedStatuses.length ? access.allowedStatuses : STATUS_KEYS.slice();
+    state.createStatuses = access.createStatuses && access.createStatuses.length ? access.createStatuses : state.allowedStatuses.slice();
+    state.assignees = data.assignees || [];
+    if (createBtn) createBtn.hidden = !state.canCreate;
+    if (accessHint) {
+      if (state.ownOnly) {
+        accessHint.hidden = false;
+        accessHint.textContent = "你是客服，只看得到指派給自己的詢問。狀態只能改成處理中，不能改成已回覆，也不能刪除。";
+      } else if (state.canEdit && !state.canDelete) {
+        accessHint.hidden = false;
+        accessHint.textContent = "你可以查看全部詢問，並修改狀態與備註。不能刪除詢問。";
+      } else {
+        accessHint.hidden = true;
+        accessHint.textContent = "";
+      }
+    }
     var pages = Math.max(1, Math.ceil(state.items.length / state.pageSize) || 1);
     if (state.page > pages) state.page = pages;
     renderTable();
@@ -441,7 +555,7 @@
   }
 
   function startCreate() {
-    if (!state.canEdit) return;
+    if (!state.canCreate) return;
     state.mode = "create";
     state.selected = null;
     openModalForSelection();

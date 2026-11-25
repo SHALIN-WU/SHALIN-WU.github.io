@@ -4,8 +4,11 @@ import { json } from "./http.js";
 const STAMP = "2026-11-25T00:00:00.000Z";
 
 export const PERMISSIONS = [
-  { key: "inquiries.read", label: "檢視客戶詢問", group: "客戶詢問" },
-  { key: "inquiries.write", label: "管理客戶詢問", group: "客戶詢問" },
+  { key: "inquiries.read", label: "檢視詢問", group: "客戶詢問" },
+  { key: "inquiries.own", label: "只看指派給自己的詢問", group: "客戶詢問" },
+  { key: "inquiries.write", label: "改狀態與備註", group: "客戶詢問" },
+  { key: "inquiries.progress", label: "只能把狀態改成處理中", group: "客戶詢問" },
+  { key: "inquiries.delete", label: "刪除詢問", group: "客戶詢問" },
   { key: "content.read", label: "檢視網站內容", group: "網站內容" },
   { key: "content.write", label: "編輯網站內容", group: "網站內容" },
   { key: "media.read", label: "檢視媒體", group: "媒體" },
@@ -21,6 +24,11 @@ export const PERMISSIONS = [
 ];
 
 const PERMISSION_KEYS = PERMISSIONS.map((item) => item.key);
+const SCOPE_ONLY = new Set(["inquiries.own", "inquiries.progress"]);
+const ADMIN_DESCRIPTION = "可查看與處理全部詢問、刪除詢問，並管理帳號與角色。";
+const EDITOR_DESCRIPTION = "可查看全部詢問並改狀態與備註，可檢視網站內容、媒體與動態頁面。不能刪除詢問。";
+const SALES_DESCRIPTION = "可查看全部詢問，並修改狀態與備註。不能刪除，也不能管理帳號與角色。";
+const SUPPORT_DESCRIPTION = "只能查看指派給自己的詢問，可填寫備註，狀態只能改成處理中。";
 const EDITOR_PERMISSIONS = [
   "inquiries.read",
   "inquiries.write",
@@ -28,6 +36,20 @@ const EDITOR_PERMISSIONS = [
   "media.read",
   "pages.read"
 ];
+const SALES_PERMISSIONS = ["inquiries.read", "inquiries.write"];
+const SUPPORT_PERMISSIONS = ["inquiries.read", "inquiries.own", "inquiries.progress"];
+const ADMIN_SYSTEM_PERMISSIONS = [
+  "users.read",
+  "users.write",
+  "menus.read",
+  "menus.write",
+  "roles.read",
+  "roles.write"
+];
+
+export function adminPermissionKeys() {
+  return PERMISSION_KEYS.filter((key) => !SCOPE_ONLY.has(key));
+}
 
 export const MENU_ICONS = ["folder", "inquiry", "content", "media", "pages", "users", "menus", "roles", "link"];
 
@@ -59,11 +81,13 @@ export function permissionCatalog() {
   return PERMISSIONS.map((item) => ({ key: item.key, label: item.label, group: item.group }));
 }
 
-function normalizePermissions(list, { all = false } = {}) {
-  if (all) return [...PERMISSION_KEYS];
+function normalizePermissions(list) {
   const set = new Set((Array.isArray(list) ? list : []).filter((key) => PERMISSION_KEYS.includes(key)));
   for (const key of [...set]) {
     if (key.endsWith(".write")) set.add(key.replace(/\.write$/, ".read"));
+    if (key === "inquiries.delete" || key === "inquiries.progress" || key === "inquiries.own") {
+      set.add("inquiries.read");
+    }
   }
   return PERMISSION_KEYS.filter((key) => set.has(key));
 }
@@ -79,33 +103,77 @@ export async function ensureRbac(db) {
     throw error;
   }
 
+  const existing = await db
+    .prepare("SELECT id FROM admin_roles WHERE id IN ('role-admin', 'role-editor', 'role-sales', 'role-support')")
+    .all();
+  const have = new Set((existing.results || []).map((row) => row.id));
   const statements = [
-    db.prepare(`INSERT OR IGNORE INTO admin_roles (id, key, name, description, is_system, created_at, updated_at)
-      VALUES ('role-admin', 'admin', '管理者', '可使用全部後台功能，權限不可縮減。', 1, ?, ?)`).bind(STAMP, STAMP),
-    db.prepare(`INSERT OR IGNORE INTO admin_roles (id, key, name, description, is_system, created_at, updated_at)
-      VALUES ('role-editor', 'editor', '編輯者', '可處理客戶詢問，並檢視網站內容、媒體與動態頁面。', 1, ?, ?)`).bind(STAMP, STAMP),
-    ...PERMISSION_KEYS.map((key) =>
-      db.prepare("INSERT OR IGNORE INTO admin_role_permissions (role_id, permission) VALUES ('role-admin', ?)").bind(key)
-    ),
-    ...EDITOR_PERMISSIONS.map((key) =>
-      db.prepare("INSERT OR IGNORE INTO admin_role_permissions (role_id, permission) VALUES ('role-editor', ?)").bind(key)
-    ),
+    db.prepare(`UPDATE admin_roles SET name = '管理員' WHERE key = 'admin' AND name = '管理者'`),
+    db.prepare(`UPDATE admin_roles SET description = ?
+      WHERE key = 'admin' AND description IN ('可使用全部後台功能。', '可使用全部後台功能，權限不可縮減。')`).bind(ADMIN_DESCRIPTION),
+    db.prepare(`UPDATE admin_roles SET description = ?
+      WHERE key = 'editor' AND description = '可處理客戶詢問，並檢視網站內容、媒體與動態頁面。'`).bind(EDITOR_DESCRIPTION)
+  ];
+  if (have.has("role-admin")) {
+    statements.push(
+      db.prepare("INSERT OR IGNORE INTO admin_role_permissions (role_id, permission) VALUES ('role-admin', 'inquiries.delete')"),
+      ...ADMIN_SYSTEM_PERMISSIONS.map((key) =>
+        db.prepare("INSERT OR IGNORE INTO admin_role_permissions (role_id, permission) VALUES ('role-admin', ?)").bind(key)
+      )
+    );
+  }
+  if (!have.has("role-admin")) {
+    statements.push(
+      db.prepare(`INSERT INTO admin_roles (id, key, name, description, is_system, created_at, updated_at)
+        VALUES ('role-admin', 'admin', '管理員', ?, 1, ?, ?)`).bind(ADMIN_DESCRIPTION, STAMP, STAMP),
+      ...adminPermissionKeys().map((key) =>
+        db.prepare("INSERT INTO admin_role_permissions (role_id, permission) VALUES ('role-admin', ?)").bind(key)
+      )
+    );
+  }
+  if (!have.has("role-editor")) {
+    statements.push(
+      db.prepare(`INSERT INTO admin_roles (id, key, name, description, is_system, created_at, updated_at)
+        VALUES ('role-editor', 'editor', '編輯者', ?, 1, ?, ?)`).bind(EDITOR_DESCRIPTION, STAMP, STAMP),
+      ...EDITOR_PERMISSIONS.map((key) =>
+        db.prepare("INSERT INTO admin_role_permissions (role_id, permission) VALUES ('role-editor', ?)").bind(key)
+      )
+    );
+  }
+  if (!have.has("role-sales")) {
+    statements.push(
+      db.prepare(`INSERT INTO admin_roles (id, key, name, description, is_system, created_at, updated_at)
+        VALUES ('role-sales', 'sales', '業務', ?, 1, ?, ?)`).bind(SALES_DESCRIPTION, STAMP, STAMP),
+      ...SALES_PERMISSIONS.map((key) =>
+        db.prepare("INSERT INTO admin_role_permissions (role_id, permission) VALUES ('role-sales', ?)").bind(key)
+      )
+    );
+  }
+  if (!have.has("role-support")) {
+    statements.push(
+      db.prepare(`INSERT INTO admin_roles (id, key, name, description, is_system, created_at, updated_at)
+        VALUES ('role-support', 'support', '客服', ?, 1, ?, ?)`).bind(SUPPORT_DESCRIPTION, STAMP, STAMP),
+      ...SUPPORT_PERMISSIONS.map((key) =>
+        db.prepare("INSERT INTO admin_role_permissions (role_id, permission) VALUES ('role-support', ?)").bind(key)
+      )
+    );
+  }
+  statements.push(
     ...MENU_SEED.map((row) =>
       db.prepare(`INSERT OR IGNORE INTO admin_menus (
         id, parent_id, key, label, href, icon, permission, sort_order, enabled, is_group, is_system, created_at, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)`).bind(...row, STAMP, STAMP)
     ),
     db.prepare("UPDATE admin_users SET role = 'editor' WHERE role = 'staff'")
-  ];
+  );
   await db.batch(statements);
   ready = true;
 }
 
 export async function permissionsFor(db, roleKey) {
   const key = normalizeRoleKey(roleKey);
-  if (key === "admin") return [...PERMISSION_KEYS];
   const role = await db.prepare("SELECT id FROM admin_roles WHERE key = ?").bind(key).first();
-  if (!role) return [];
+  if (!role) return key === "admin" ? adminPermissionKeys() : [];
   const rows = await db
     .prepare("SELECT permission FROM admin_role_permissions WHERE role_id = ?")
     .bind(role.id)
@@ -209,7 +277,7 @@ export async function authorize(context, permission) {
 
   if (!context.env.DB) {
     const allowed = session.role === "admin" || session.id === "env-admin";
-    const permissions = allowed ? [...PERMISSION_KEYS] : [];
+    const permissions = allowed ? adminPermissionKeys() : [];
     if (permission && !permissions.includes(permission)) {
       return { session, permissions, response: json({ error: "沒有權限" }, 403) };
     }
@@ -242,7 +310,7 @@ function mapRole(row, permissions, userCount) {
     name: row.name,
     description: row.description || "",
     isSystem: Number(row.is_system) === 1,
-    permissions: normalizePermissions(permissions, { all: row.key === "admin" }),
+    permissions: normalizePermissions(permissions),
     userCount: Number(userCount) || 0
   };
 }
@@ -277,7 +345,9 @@ export async function createRole(db, input) {
   if (!/^[a-z][a-z0-9-]{1,31}$/.test(key)) fail("角色代碼需為 2–32 字元小寫英數，並以字母開頭");
   if (!name || name.length > 40) fail("角色名稱必填");
   if (description.length > 160) fail("說明過長");
-  if (key === "admin" || key === "staff" || key === "editor") fail("這個角色代碼已保留");
+  if (key === "admin" || key === "staff" || key === "editor" || key === "sales" || key === "support") {
+    fail("這個角色代碼已保留");
+  }
 
   const now = new Date().toISOString();
   const id = crypto.randomUUID();
@@ -306,9 +376,10 @@ export async function updateRole(db, id, input) {
     .bind(name, description, now, id)
     .run();
 
-  const permissions = current.key === "admin"
-    ? [...PERMISSION_KEYS]
-    : normalizePermissions(input?.permissions);
+  let permissions = normalizePermissions(input?.permissions);
+  if (current.key === "admin") {
+    permissions = normalizePermissions([...permissions, ...ADMIN_SYSTEM_PERMISSIONS]);
+  }
   await replacePermissions(db, id, permissions);
   const roles = await listRoles(db);
   return roles.find((role) => role.id === id) || null;
@@ -329,6 +400,13 @@ function isSafeHref(href) {
   if (!href) return false;
   if (href.startsWith("/") && !href.startsWith("//")) return href.length <= 200;
   return /^https:\/\/[^\s]+$/i.test(href) && href.length <= 300;
+}
+
+function readSortOrder(value, fallback) {
+  if (value == null || value === "") return fallback;
+  const next = Number(value);
+  if (!Number.isInteger(next) || next < 0 || next > 9999) fail("排序需為 0–9999 的整數");
+  return next;
 }
 
 async function nextSort(db, parentId) {
@@ -357,7 +435,7 @@ export async function createMenu(db, input) {
   const permission = isGroup ? "" : String(input?.permission || "");
   if (permission && !PERMISSION_KEYS.includes(permission)) fail("權限不正確");
   const icon = isGroup ? "folder" : (MENU_ICONS.includes(input?.icon) ? input.icon : "link");
-  const sortOrder = await nextSort(db, parentId);
+  const sortOrder = readSortOrder(input?.sortOrder, await nextSort(db, parentId));
   const now = new Date().toISOString();
   const id = crypto.randomUUID();
 
@@ -401,13 +479,17 @@ export async function updateMenu(db, id, input) {
   if (!isGroup && input?.icon && MENU_ICONS.includes(input.icon)) icon = input.icon;
   if (isGroup) icon = "folder";
 
-  const enabled = input?.enabled != null ? Boolean(input.enabled) : Number(current.enabled) === 1;
+  const isEntry = current.key === "menus";
+  const enabled = isEntry
+    ? true
+    : (input?.enabled != null ? Boolean(input.enabled) : Number(current.enabled) === 1);
+  const sortOrder = readSortOrder(input?.sortOrder, Number(current.sort_order) || 0);
   const now = new Date().toISOString();
   await db
     .prepare(`UPDATE admin_menus SET
-      parent_id = ?, label = ?, href = ?, icon = ?, permission = ?, enabled = ?, updated_at = ?
+      parent_id = ?, label = ?, href = ?, icon = ?, permission = ?, sort_order = ?, enabled = ?, updated_at = ?
       WHERE id = ?`)
-    .bind(parentId || null, label, href, icon, permission, enabled ? 1 : 0, now, id)
+    .bind(parentId || null, label, href, icon, permission, sortOrder, enabled ? 1 : 0, now, id)
     .run();
 
   const items = await listMenus(db);
@@ -417,7 +499,7 @@ export async function updateMenu(db, id, input) {
 export async function deleteMenu(db, id) {
   const current = await db.prepare("SELECT * FROM admin_menus WHERE id = ?").bind(id).first();
   if (!current) return false;
-  if (Number(current.is_system) === 1) fail("系統選單不可刪除，可改為隱藏");
+  if (current.key === "menus") fail("選單管理是進入這個畫面的入口，不能刪除");
   const children = await db.prepare("SELECT COUNT(*) AS total FROM admin_menus WHERE parent_id = ?").bind(id).first();
   if (Number(children?.total || 0) > 0) fail("請先刪除或移走子選單");
   await db.prepare("DELETE FROM admin_menus WHERE id = ?").bind(id).run();

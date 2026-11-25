@@ -34,7 +34,7 @@
       username: "",
       displayName: "",
       email: "",
-      role: "editor",
+      role: "sales",
       active: true,
       password: "",
       avatarUrl: null,
@@ -106,7 +106,7 @@
         var lastLogin = user.lastLoginAt
           ? S.formatDate(user.lastLoginAt, true)
           : "尚未登入";
-        var roleClass = user.role === "admin" ? "role-admin" : "role-editor";
+        var roleClass = S.roleClass(user.role);
         var roleIcon = user.role === "admin" ? S.ICONS.star : S.ICONS.user;
         var canEditRow = state.canWrite || isMe;
         var canDelete = state.canWrite && !isMe;
@@ -149,7 +149,9 @@
     var title = mode === "create" ? "新增使用者" : (state.accountOnly ? "我的帳號" : "編輯使用者");
     var roleLocked = state.accountOnly || !state.canWrite;
     var roles = state.roles.length ? state.roles : [
-      { key: "admin", name: "管理者" },
+      { key: "admin", name: "管理員" },
+      { key: "sales", name: "業務" },
+      { key: "support", name: "客服" },
       { key: "editor", name: "編輯者" }
     ];
     var roleOptions = roles.map(function (role) {
@@ -297,7 +299,7 @@
     var payload = {
       displayName: String(data.get("displayName") || "").trim(),
       email: String(data.get("email") || "").trim(),
-      role: String(data.get("role") || (state.editing && state.editing.role) || "editor"),
+      role: String(data.get("role") || (state.editing && state.editing.role) || "sales"),
       active: String(data.get("active") || (state.editing && state.editing.active === false ? "0" : "1")) === "1",
       password: String(data.get("password") || "")
     };

@@ -182,7 +182,24 @@ async function handleApi(req, res, url) {
       limit: url.searchParams.get("limit") || undefined,
       offset: url.searchParams.get("offset") || undefined
     });
-    return sendJson(res, 200, { ...result, statuses: listStatuses() });
+    const statuses = listStatuses();
+    return sendJson(res, 200, {
+      ...result,
+      statuses,
+      canEdit: true,
+      access: {
+        canCreate: true,
+        canEdit: true,
+        canWrite: true,
+        canDelete: true,
+        canAssign: false,
+        canEditFields: true,
+        ownOnly: false,
+        allowedStatuses: statuses,
+        createStatuses: statuses
+      },
+      assignees: []
+    });
   }
 
   const inquiryMatch = pathname.match(/^\/api\/inquiries\/([^/]+)$/);

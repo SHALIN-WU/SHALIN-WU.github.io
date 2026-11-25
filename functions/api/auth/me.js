@@ -1,6 +1,6 @@
 import { requireAdmin } from "../../_lib/auth.js";
 import { json } from "../../_lib/http.js";
-import { describeAccess, ensureRbac, PERMISSIONS } from "../../_lib/rbac.js";
+import { adminPermissionKeys, describeAccess, ensureRbac } from "../../_lib/rbac.js";
 import { getUserById } from "../../_lib/users.js";
 
 export async function onRequestGet(context) {
@@ -30,8 +30,8 @@ export async function onRequestGet(context) {
   }
 
   let access = {
-    roleName: role === "admin" ? "管理者" : "編輯者",
-    permissions: role === "admin" ? PERMISSIONS.map((item) => item.key) : [],
+    roleName: role === "admin" ? "管理員" : "編輯者",
+    permissions: role === "admin" ? adminPermissionKeys() : [],
     menus: []
   };
 

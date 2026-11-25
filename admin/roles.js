@@ -39,22 +39,34 @@
     }).join("");
   }
 
+  var ADMIN_LOCKED = {
+    "users.read": true,
+    "users.write": true,
+    "menus.read": true,
+    "menus.write": true,
+    "roles.read": true,
+    "roles.write": true
+  };
+
   function formHtml(draft) {
-    var locked = draft.key === "admin";
+    var lockedAdmin = draft.key === "admin";
     var selected = new Set(draft.permissions || []);
     var grid = groupedPermissions().map(function (group) {
       return '<section class="perm-group"><h3>' + S.esc(group.name) + "</h3><div class=\"perm-options\">" +
         group.items.map(function (perm) {
+          var locked = lockedAdmin && ADMIN_LOCKED[perm.key];
           var checked = locked || selected.has(perm.key);
           return '<label><input type="checkbox" name="permission" value="' + S.esc(perm.key) + '"' +
             (checked ? " checked" : "") + (locked || !state.canEdit ? " disabled" : "") + "> " +
-            S.esc(perm.label) + "</label>";
+            S.esc(perm.label) + (locked ? "（固定）" : "") + "</label>";
         }).join("") +
         "</div></section>";
     }).join("");
     return '<form id="role-form">' +
       "<h2>" + (draft.id ? "編輯角色" : "新增角色") + "</h2>" +
-      (locked ? '<p class="ref">管理者固定擁有全部權限。</p>' : '<p class="ref">勾選「管理」時會一併帶上對應的檢視權限。</p>') +
+      '<p class="ref">' + (lockedAdmin
+        ? "管理員固定保留系統設定（使用者、選單、角色），避免改完後側欄消失。其餘權限可以調整。代碼不可修改。"
+        : "勾選「管理」時會一併帶上對應的檢視權限。已建立的角色代碼不可修改。") + "</p>" +
       '<div class="form-grid">' +
       (draft.id
         ? '<label class="field"><span>代碼</span><input value="' + S.esc(draft.key) + '" disabled></label>'
@@ -81,6 +93,11 @@
     var permissions = Array.from(form.querySelectorAll('input[name="permission"]:checked')).map(function (input) {
       return input.value;
     });
+    if (state.draft.key === "admin") {
+      ["users.read", "users.write", "menus.read", "menus.write", "roles.read", "roles.write"].forEach(function (key) {
+        if (permissions.indexOf(key) < 0) permissions.push(key);
+      });
+    }
     var payload = {
       name: String(data.get("name") || "").trim(),
       description: String(data.get("description") || "").trim(),

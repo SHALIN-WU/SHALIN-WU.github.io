@@ -27,7 +27,7 @@ export const LOCALES = [
   { id: "vi", label: "Tiếng Việt" }
 ];
 
-export const STATUSES = ["new", "in_progress", "quoted", "closed", "spam"];
+export const STATUSES = ["new", "in_progress", "replied"];
 
 export function findOffice(id) {
   return OFFICES.find((office) => office.id === id) || null;
