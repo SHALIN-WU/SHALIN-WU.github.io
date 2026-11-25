@@ -49,7 +49,7 @@
   function render() {
     hint.textContent = state.canEdit
       ? "內文是純文字。單獨一行貼上媒體庫網址才會顯示成圖片。"
-      : "專員可以查看頁面。只有管理者可以新增、編輯、刪除或發布。";
+      : "目前帳號只能查看頁面。有管理權限的角色才能新增、編輯、刪除或發布。";
     createBtn.hidden = !state.canEdit;
     var items = visibleItems();
     if (!items.length) {

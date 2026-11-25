@@ -1,11 +1,11 @@
-import { requireAdmin } from "../../_lib/auth.js";
+import { authorize } from "../../_lib/rbac.js";
 import { deleteInquiry, getInquiry, updateInquiry } from "../../_lib/db.js";
 import { json, readJson } from "../../_lib/http.js";
 import { parseInquiryPayload } from "../../_lib/inquiry-fields.js";
 
 export async function onRequestGet(context) {
-  const session = await requireAdmin(context.request, context.env);
-  if (!session) return json({ error: "Unauthorized" }, 401);
+  const gate = await authorize(context, "inquiries.read");
+  if (gate.response) return gate.response;
   if (!context.env.DB) return json({ error: "D1 database is not bound." }, 500);
 
   const item = await getInquiry(context.env.DB, context.params.id);
@@ -22,8 +22,8 @@ export async function onRequestPatch(context) {
 }
 
 async function updateHandler(context, fullPreferred) {
-  const session = await requireAdmin(context.request, context.env);
-  if (!session) return json({ error: "Unauthorized" }, 401);
+  const gate = await authorize(context, "inquiries.write");
+  if (gate.response) return gate.response;
   if (!context.env.DB) return json({ error: "D1 database is not bound." }, 500);
 
   const body = await readJson(context.request);
@@ -62,8 +62,8 @@ async function updateHandler(context, fullPreferred) {
 }
 
 export async function onRequestDelete(context) {
-  const session = await requireAdmin(context.request, context.env);
-  if (!session) return json({ error: "Unauthorized" }, 401);
+  const gate = await authorize(context, "inquiries.write");
+  if (gate.response) return gate.response;
   if (!context.env.DB) return json({ error: "D1 database is not bound." }, 500);
 
   const ok = await deleteInquiry(context.env.DB, context.params.id);

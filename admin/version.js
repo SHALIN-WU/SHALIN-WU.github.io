@@ -1,1 +1,1 @@
-window.ADMIN_VERSION = "2.6.0";
+window.ADMIN_VERSION = "2.7.0";

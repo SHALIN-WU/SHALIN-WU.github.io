@@ -1,6 +1,6 @@
 import { json } from "../_lib/http.js";
 
-const VERSION = "2.5.0";
+const VERSION = "2.7.0";
 
 export async function onRequestGet() {
   return json({

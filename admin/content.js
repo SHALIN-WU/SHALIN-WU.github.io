@@ -41,7 +41,7 @@
     var disabled = state.canEdit ? "" : " disabled";
     var hint = state.canEdit
       ? "留白會讓公開網站沿用頁面上原來的句子。斜體字要出現在標題裡，首頁才會維持斜體。"
-      : "專員可以查看內容。只有管理者可以儲存。";
+      : "目前帳號只能查看內容。有編輯權限的角色才能儲存。";
     var groups = [];
     state.keys.forEach(function (field) {
       var last = groups[groups.length - 1];

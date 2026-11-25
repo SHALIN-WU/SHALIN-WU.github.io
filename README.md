@@ -83,7 +83,22 @@ Serves `site/` + `admin/` with a JSON file store under `data/` (not D1).
 
 Roles:
 
-- `admin` — enquiry CRUD + user CRUD
-- `staff` — enquiry CRUD only
+- `admin` — 管理者. All permissions, including users, menus, and roles. This role cannot be deleted or reduced.
+- `editor` — 編輯者. Enquiry management, plus read-only access to site content, media, and dynamic pages.
+- Custom roles can be created under 角色權限. A write permission always includes its matching read permission.
+
+The sidebar comes from 選單管理. A menu item is visible when it is enabled and the signed-in role has its required permission. Existing `staff` accounts are migrated to `editor`.
+
+Apply the RBAC tables before using the new pages:
+
+```powershell
+npm run db:rbac:local
+```
+
+Remote:
+
+```powershell
+npm run db:rbac
+```
 
 First login with the env bootstrap credentials (`ADMIN_USERNAME` / `ADMIN_PASSWORD`) seeds the first admin user into D1 when the users table is empty.

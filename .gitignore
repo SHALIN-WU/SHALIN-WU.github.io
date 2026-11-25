@@ -1,5 +1,6 @@
 node_modules/
 .env
+.dev.vars
 data/
 dist/
 .wrangler/
@@ -13,3 +14,8 @@ freight-hero-right.png
 locations.html
 sitemap.html
 sitemap-tree.html
+freight-hero-preview.jpg
+cookies.txt
+hwa-cookies.txt
+*-body.txt
+*-cookies.txt

@@ -1,15 +1,15 @@
-import { requireAdmin, requireRole } from "../_lib/auth.js";
 import { json } from "../_lib/http.js";
 import { insertMedia, listMedia, readImageUpload } from "../_lib/media.js";
+import { authorize } from "../_lib/rbac.js";
 
 export async function onRequestGet(context) {
-  const session = await requireAdmin(context.request, context.env);
-  if (!session) return json({ error: "Unauthorized" }, 401);
+  const gate = await authorize(context, "media.read");
+  if (gate.response) return gate.response;
   if (!context.env.DB) return json({ error: "D1 database is not bound." }, 500);
 
   try {
     const items = await listMedia(context.env.DB);
-    return json({ items, canEdit: session.role === "admin" });
+    return json({ items, canEdit: gate.permissions.includes("media.write") });
   } catch (error) {
     console.error("list media failed", error);
     return json({ error: "無法讀取媒體" }, 500);
@@ -17,9 +17,8 @@ export async function onRequestGet(context) {
 }
 
 export async function onRequestPost(context) {
-  const session = await requireAdmin(context.request, context.env);
-  if (!session) return json({ error: "Unauthorized" }, 401);
-  if (!requireRole(session, ["admin"])) return json({ error: "需要管理員權限" }, 403);
+  const gate = await authorize(context, "media.write");
+  if (gate.response) return gate.response;
   if (!context.env.DB) return json({ error: "D1 database is not bound." }, 500);
   if (!context.env.MEDIA_KV) return json({ error: "KV namespace is not bound." }, 500);
 
@@ -58,7 +57,7 @@ export async function onRequestPost(context) {
       mime: upload.mime,
       byteLength: upload.bytes.byteLength,
       alt: upload.alt,
-      createdBy: session.id
+      createdBy: gate.session.id
     });
     return json({ item: saved }, 201);
   } catch (error) {

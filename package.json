@@ -1,6 +1,6 @@
 {
   "name": "northgo-website",
-  "version": "2.6.0",
+  "version": "2.7.0",
   "private": true,
   "type": "module",
   "description": "Northgo static site with Cloudflare Pages Functions and D1 enquiry admin",
@@ -9,8 +9,8 @@
     "prepare:dist": "node scripts/prepare-dist.mjs",
     "start": "node server/index.mjs",
     "dev:cf": "npm run prepare:dist && wrangler pages dev dist --d1=DB --kv=MEDIA_KV",
-    "db:local": "wrangler d1 execute northgo-inquiries --local --file=./migrations/0001_init.sql && wrangler d1 execute northgo-inquiries --local --file=./migrations/0002_users.sql && wrangler d1 execute northgo-inquiries --local --file=./migrations/0003_avatars.sql",
-    "db:remote": "wrangler d1 execute northgo-inquiries --remote --file=./migrations/0001_init.sql && wrangler d1 execute northgo-inquiries --remote --file=./migrations/0002_users.sql && wrangler d1 execute northgo-inquiries --remote --file=./migrations/0003_avatars.sql",
+    "db:local": "wrangler d1 execute northgo-inquiries --local --file=./migrations/0001_init.sql && wrangler d1 execute northgo-inquiries --local --file=./migrations/0002_users.sql && wrangler d1 execute northgo-inquiries --local --file=./migrations/0003_avatars.sql && wrangler d1 execute northgo-inquiries --local --file=./migrations/0007_rbac.sql",
+    "db:remote": "wrangler d1 execute northgo-inquiries --remote --file=./migrations/0001_init.sql && wrangler d1 execute northgo-inquiries --remote --file=./migrations/0002_users.sql && wrangler d1 execute northgo-inquiries --remote --file=./migrations/0003_avatars.sql && wrangler d1 execute northgo-inquiries --remote --file=./migrations/0007_rbac.sql",
     "db:users": "wrangler d1 execute northgo-inquiries --remote --file=./migrations/0002_users.sql && wrangler d1 execute northgo-inquiries --remote --file=./migrations/0003_avatars.sql",
     "db:cms:local": "wrangler d1 execute northgo-inquiries --local --file=./migrations/0004_cms.sql",
     "db:cms": "wrangler d1 execute northgo-inquiries --remote --file=./migrations/0004_cms.sql",
@@ -18,6 +18,8 @@
     "db:media": "wrangler d1 execute northgo-inquiries --remote --file=./migrations/0005_media.sql",
     "db:pages:local": "wrangler d1 execute northgo-inquiries --local --file=./migrations/0006_pages.sql",
     "db:pages": "wrangler d1 execute northgo-inquiries --remote --file=./migrations/0006_pages.sql",
+    "db:rbac:local": "wrangler d1 execute northgo-inquiries --local --file=./migrations/0007_rbac.sql",
+    "db:rbac": "wrangler d1 execute northgo-inquiries --remote --file=./migrations/0007_rbac.sql",
     "deploy": "npm run prepare:dist && wrangler pages deploy dist --project-name=northgo",
     "hash-password": "node server/hash-password.mjs"
   },

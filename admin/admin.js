@@ -19,6 +19,7 @@
     items: [],
     selected: null,
     mode: "view",
+    canEdit: true,
     meta: { offices: [], services: [], locales: [], statuses: [] }
   };
 
@@ -385,10 +386,12 @@
             "</span></td>" +
             "<td>" + S.esc(S.formatDate(item.createdAt, true)) + "</td>" +
             '<td class="actions-col"><div class="actions">' +
-              '<button class="icon-btn edit" type="button" data-action="edit" title="編輯" aria-label="編輯">' +
-                S.ICONS.edit + "</button>" +
-              '<button class="icon-btn delete" type="button" data-action="delete" title="刪除" aria-label="刪除">' +
-                S.ICONS.trash + "</button>" +
+              (state.canEdit
+                ? '<button class="icon-btn edit" type="button" data-action="edit" title="編輯" aria-label="編輯">' +
+                  S.ICONS.edit + "</button>" +
+                  '<button class="icon-btn delete" type="button" data-action="delete" title="刪除" aria-label="刪除">' +
+                  S.ICONS.trash + "</button>"
+                : "") +
             "</div></td>" +
           "</tr>"
         );
@@ -409,6 +412,8 @@
     params.set("limit", "500");
     var data = await S.api("/api/inquiries?" + params.toString());
     state.items = data.items || [];
+    state.canEdit = data.canEdit !== false;
+    if (createBtn) createBtn.hidden = !state.canEdit;
     var pages = Math.max(1, Math.ceil(state.items.length / state.pageSize) || 1);
     if (state.page > pages) state.page = pages;
     renderTable();
@@ -436,6 +441,7 @@
   }
 
   function startCreate() {
+    if (!state.canEdit) return;
     state.mode = "create";
     state.selected = null;
     openModalForSelection();

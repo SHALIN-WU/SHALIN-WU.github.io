@@ -1,11 +1,10 @@
-import { requireAdmin, requireRole } from "../../_lib/auth.js";
 import { json, readJson } from "../../_lib/http.js";
+import { authorize } from "../../_lib/rbac.js";
 import { deletePage, isUniqueConflict, parsePageInput, updatePage } from "../../_lib/pages.js";
 
 export async function onRequestPut(context) {
-  const session = await requireAdmin(context.request, context.env);
-  if (!session) return json({ error: "Unauthorized" }, 401);
-  if (!requireRole(session, ["admin"])) return json({ error: "需要管理員權限" }, 403);
+  const gate = await authorize(context, "pages.write");
+  if (gate.response) return gate.response;
   if (!context.env.DB) return json({ error: "D1 database is not bound." }, 500);
 
   const body = await readJson(context.request);
@@ -14,7 +13,7 @@ export async function onRequestPut(context) {
   if (!parsed.ok) return json({ error: parsed.errors[0], errors: parsed.errors }, 400);
 
   try {
-    const item = await updatePage(context.env.DB, context.params.id, parsed.data, session.id);
+    const item = await updatePage(context.env.DB, context.params.id, parsed.data, gate.session.id);
     if (!item) return json({ error: "Not found" }, 404);
     return json({ item });
   } catch (error) {
@@ -25,9 +24,8 @@ export async function onRequestPut(context) {
 }
 
 export async function onRequestDelete(context) {
-  const session = await requireAdmin(context.request, context.env);
-  if (!session) return json({ error: "Unauthorized" }, 401);
-  if (!requireRole(session, ["admin"])) return json({ error: "需要管理員權限" }, 403);
+  const gate = await authorize(context, "pages.write");
+  if (gate.response) return gate.response;
   if (!context.env.DB) return json({ error: "D1 database is not bound." }, 500);
 
   try {

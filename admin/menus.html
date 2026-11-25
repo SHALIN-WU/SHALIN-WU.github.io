@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>選單管理｜Northgo 後台管理</title>
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin/admin.css">
+</head>
+<body data-permission="menus.read">
+  <div class="admin-shell">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a class="brand-lockup" href="/admin/">
+          <span class="brand-name">Northgo</span>
+          <span class="brand-sub">後台管理</span>
+          <span class="brand-ver" id="admin-version">v—</span>
+        </a>
+        <div class="topbar-user">
+          <div class="user-chip">
+            <div class="avatar" id="admin-avatar">NG</div>
+            <div class="user-chip-meta">
+              <strong id="admin-user"></strong>
+              <span id="admin-handle"></span>
+            </div>
+            <span class="badge role-admin" id="admin-role"></span>
+          </div>
+          <button class="btn ghost" type="button" id="my-account-btn" data-self-account="1">我的帳號</button>
+          <button class="btn ghost" type="button" id="logout-btn">登出</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="workspace">
+    <aside class="sidenav" aria-label="後台選單">
+      <p class="sidenav-label">功能</p>
+      <nav id="sidenav-tree"></nav>
+    </aside>
+    <main class="page">
+      <h1 class="page-title"><span class="page-mark" aria-hidden="true"></span>選單管理</h1>
+      <section class="panel">
+        <div class="toolbar">
+          <p class="media-hint" id="menus-hint">側欄依角色權限顯示。系統選單可以改名、隱藏或調整順序。</p>
+          <div class="toolbar-actions">
+            <button class="btn ghost" type="button" id="reload-btn">重新載入</button>
+            <button class="btn ghost" type="button" id="create-group-btn">新增群組</button>
+            <button class="btn primary" type="button" id="create-item-btn">新增項目</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table" aria-label="後台選單">
+            <thead>
+              <tr>
+                <th>名稱</th>
+                <th>連結</th>
+                <th>權限</th>
+                <th>狀態</th>
+                <th class="actions-col">操作</th>
+              </tr>
+            </thead>
+            <tbody id="menu-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+    </div>
+  </div>
+
+  <div class="modal-root" id="modal-root" hidden>
+    <div class="modal-backdrop" data-close-modal></div>
+    <div class="modal-panel" id="modal-panel" role="dialog" aria-modal="true"></div>
+  </div>
+  <div class="toast" id="toast" hidden></div>
+  <script src="/admin/version.js"></script>
+  <script src="/admin/shared.js"></script>
+  <script src="/admin/menus.js"></script>
+</body>
+</html>

@@ -1,7 +1,21 @@
 import { hashPassword } from "./password.js";
 import { parseDataUrl } from "./avatar.js";
 
-export const ROLES = ["admin", "staff"];
+export async function assertKnownRole(db, role) {
+  const key = String(role || "").trim();
+  const row = await db.prepare("SELECT key FROM admin_roles WHERE key = ?").bind(key).first();
+  if (!row) {
+    const error = new Error("Invalid role");
+    error.code = "INVALID_ROLE";
+    throw error;
+  }
+  return row.key;
+}
+
+export async function listRoleOptions(db) {
+  const result = await db.prepare("SELECT key, name FROM admin_roles ORDER BY is_system DESC, name ASC").all();
+  return (result.results || []).map((row) => ({ key: row.key, name: row.name }));
+}
 
 function mapUser(row, { includeAvatarData = false } = {}) {
   if (!row) return null;
@@ -12,6 +26,7 @@ function mapUser(row, { includeAvatarData = false } = {}) {
     displayName: row.display_name,
     email: row.email || "",
     role: row.role,
+    roleName: row.role_name || "",
     active: Number(row.active) === 1,
     hasAvatar,
     avatarUrl: hasAvatar ? `/api/users/${row.id}/avatar?v=${encodeURIComponent(row.updated_at || "")}` : null,
@@ -33,15 +48,24 @@ export async function countUsers(db) {
 
 export async function listUsers(db) {
   const result = await db
-    .prepare(`SELECT id, username, display_name, email, role, active, created_at, updated_at, last_login_at,
-      CASE WHEN avatar_data != '' THEN 1 ELSE 0 END AS has_avatar
-      FROM admin_users ORDER BY created_at ASC`)
+    .prepare(`SELECT u.id, u.username, u.display_name, u.email, u.role, u.active, u.created_at, u.updated_at, u.last_login_at,
+      CASE WHEN u.avatar_data != '' THEN 1 ELSE 0 END AS has_avatar,
+      r.name AS role_name
+      FROM admin_users u
+      LEFT JOIN admin_roles r ON r.key = u.role
+      ORDER BY u.created_at ASC`)
     .all();
   return (result.results || []).map((row) => mapUser(row));
 }
 
 export async function getUserById(db, id, options) {
-  const row = await db.prepare("SELECT * FROM admin_users WHERE id = ?").bind(id).first();
+  const row = await db
+    .prepare(`SELECT u.*, r.name AS role_name
+      FROM admin_users u
+      LEFT JOIN admin_roles r ON r.key = u.role
+      WHERE u.id = ?`)
+    .bind(id)
+    .first();
   return mapUser(row, options);
 }
 
@@ -74,7 +98,7 @@ export async function createUser(db, input) {
       String(input.username).trim().toLowerCase(),
       String(input.displayName || input.username).trim(),
       String(input.email || "").trim().toLowerCase(),
-      ROLES.includes(input.role) ? input.role : "staff",
+      await assertKnownRole(db, input.role || "editor"),
       passwordHash,
       input.active === false ? 0 : 1,
       now,
@@ -93,16 +117,10 @@ export async function updateUser(db, id, patch = {}) {
   const next = {
     displayName: patch.displayName != null ? String(patch.displayName).trim() : current.displayName,
     email: patch.email != null ? String(patch.email).trim().toLowerCase() : current.email,
-    role: patch.role != null ? patch.role : current.role,
+    role: patch.role != null ? await assertKnownRole(db, patch.role) : current.role,
     active: patch.active != null ? Boolean(patch.active) : current.active,
     updatedAt: new Date().toISOString()
   };
-
-  if (!ROLES.includes(next.role)) {
-    const error = new Error("Invalid role");
-    error.code = "INVALID_ROLE";
-    throw error;
-  }
 
   if (patch.password) {
     const passwordHash = await hashPassword(patch.password);

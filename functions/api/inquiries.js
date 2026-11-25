@@ -1,4 +1,5 @@
 import { requireAdmin } from "../_lib/auth.js";
+import { authorize } from "../_lib/rbac.js";
 import { STATUSES } from "../_lib/catalog.js";
 import { createInquiry, listInquiries } from "../_lib/db.js";
 import { clientIp, json, noContent, readJson } from "../_lib/http.js";
@@ -37,8 +38,8 @@ export async function onRequestOptions(context) {
 }
 
 export async function onRequestGet(context) {
-  const session = await requireAdmin(context.request, context.env);
-  if (!session) return json({ error: "Unauthorized" }, 401);
+  const gate = await authorize(context, "inquiries.read");
+  if (gate.response) return gate.response;
   if (!context.env.DB) return json({ error: "D1 database is not bound." }, 500);
 
   const url = new URL(context.request.url);
@@ -49,11 +50,15 @@ export async function onRequestGet(context) {
     limit: url.searchParams.get("limit") || undefined,
     offset: url.searchParams.get("offset") || undefined
   });
-  return json({ ...result, statuses: STATUSES });
+  return json({ ...result, statuses: STATUSES, canEdit: gate.permissions.includes("inquiries.write") });
 }
 
 export async function onRequestPost(context) {
   const session = await requireAdmin(context.request, context.env);
+  if (session) {
+    const gate = await authorize(context, "inquiries.write");
+    if (gate.response) return withCors(context.request, gate.response);
+  }
   const body = await readJson(context.request);
   if (!body) return withCors(context.request, json({ error: "Invalid JSON." }, 400));
 

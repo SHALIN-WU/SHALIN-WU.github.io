@@ -21,7 +21,7 @@
   function render() {
     hint.textContent = state.canEdit
       ? "JPEG、PNG 或 WebP，單檔 4 MB 以內。縮圖是同一張圖，用 CSS 縮小。"
-      : "專員可以查看與複製網址。只有管理者可以上傳或刪除。";
+      : "目前帳號只能查看與複製網址。有管理權限的角色才能上傳或刪除。";
     uploadField.hidden = !state.canEdit;
     uploadBtn.hidden = !state.canEdit;
 

@@ -1,4 +1,5 @@
-import { requireAdmin, requireRole } from "../../../_lib/auth.js";
+import { authorize } from "../../../_lib/rbac.js";
+import { requireAdmin } from "../../../_lib/auth.js";
 import { decodeBase64 } from "../../../_lib/avatar.js";
 import { json, readJson } from "../../../_lib/http.js";
 import { clearUserAvatar, getUserAvatarBinary, setUserAvatar } from "../../../_lib/users.js";
@@ -24,9 +25,10 @@ export async function onRequestGet(context) {
 }
 
 export async function onRequestPut(context) {
-  const session = await requireAdmin(context.request, context.env);
-  if (!session) return json({ error: "Unauthorized" }, 401);
-  if (!requireRole(session, ["admin"])) return json({ error: "需要管理員權限" }, 403);
+  const gate = await authorize(context, "users.write");
+  const isSelf = gate.session && gate.session.id === context.params.id;
+  if (!gate.session) return json({ error: "Unauthorized" }, 401);
+  if (gate.response && !isSelf) return gate.response;
   if (!context.env.DB) return json({ error: "D1 database is not bound." }, 500);
 
   const body = await readJson(context.request);
@@ -46,9 +48,10 @@ export async function onRequestPut(context) {
 }
 
 export async function onRequestDelete(context) {
-  const session = await requireAdmin(context.request, context.env);
-  if (!session) return json({ error: "Unauthorized" }, 401);
-  if (!requireRole(session, ["admin"])) return json({ error: "需要管理員權限" }, 403);
+  const gate = await authorize(context, "users.write");
+  const isSelf = gate.session && gate.session.id === context.params.id;
+  if (!gate.session) return json({ error: "Unauthorized" }, 401);
+  if (gate.response && !isSelf) return gate.response;
   if (!context.env.DB) return json({ error: "D1 database is not bound." }, 500);
 
   const item = await clearUserAvatar(context.env.DB, context.params.id);

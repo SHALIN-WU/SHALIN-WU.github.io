@@ -1,15 +1,15 @@
-import { requireAdmin, requireRole } from "../_lib/auth.js";
 import { json, readJson } from "../_lib/http.js";
 import { insertPage, isUniqueConflict, listPages, parsePageInput } from "../_lib/pages.js";
+import { authorize } from "../_lib/rbac.js";
 
 export async function onRequestGet(context) {
-  const session = await requireAdmin(context.request, context.env);
-  if (!session) return json({ error: "Unauthorized" }, 401);
+  const gate = await authorize(context, "pages.read");
+  if (gate.response) return gate.response;
   if (!context.env.DB) return json({ error: "D1 database is not bound." }, 500);
 
   try {
     const items = await listPages(context.env.DB);
-    return json({ items, canEdit: session.role === "admin" });
+    return json({ items, canEdit: gate.permissions.includes("pages.write") });
   } catch (error) {
     console.error("list pages failed", error);
     return json({ error: "無法讀取頁面" }, 500);
@@ -17,9 +17,8 @@ export async function onRequestGet(context) {
 }
 
 export async function onRequestPost(context) {
-  const session = await requireAdmin(context.request, context.env);
-  if (!session) return json({ error: "Unauthorized" }, 401);
-  if (!requireRole(session, ["admin"])) return json({ error: "需要管理員權限" }, 403);
+  const gate = await authorize(context, "pages.write");
+  if (gate.response) return gate.response;
   if (!context.env.DB) return json({ error: "D1 database is not bound." }, 500);
 
   const body = await readJson(context.request);
@@ -28,7 +27,7 @@ export async function onRequestPost(context) {
   if (!parsed.ok) return json({ error: parsed.errors[0], errors: parsed.errors }, 400);
 
   try {
-    const item = await insertPage(context.env.DB, parsed.data, session.id);
+    const item = await insertPage(context.env.DB, parsed.data, gate.session.id);
     return json({ item }, 201);
   } catch (error) {
     if (isUniqueConflict(error)) return json({ error: "這個語系已有相同網址代碼" }, 409);

@@ -12,7 +12,9 @@
     editing: null,
     pendingAvatar: null,
     removeAvatar: false,
-    accountOnly: false
+    accountOnly: false,
+    roles: [],
+    canWrite: false
   };
 
   var tableBody = document.getElementById("user-table-body");
@@ -32,7 +34,7 @@
       username: "",
       displayName: "",
       email: "",
-      role: "staff",
+      role: "editor",
       active: true,
       password: "",
       avatarUrl: null,
@@ -74,7 +76,7 @@
     state.filtered = state.items.filter(function (user) {
       if (state.role && user.role !== state.role) return false;
       if (!q) return true;
-      var roleLabel = (S.ROLE_LABELS[user.role] || user.role || "").toLowerCase();
+      var roleLabel = (user.roleName || S.ROLE_LABELS[user.role] || user.role || "").toLowerCase();
       var hay = [
         user.username,
         user.displayName,
@@ -104,7 +106,10 @@
         var lastLogin = user.lastLoginAt
           ? S.formatDate(user.lastLoginAt, true)
           : "尚未登入";
-        var roleClass = user.role === "admin" ? "role-admin" : "role-staff";
+        var roleClass = user.role === "admin" ? "role-admin" : "role-editor";
+        var roleIcon = user.role === "admin" ? S.ICONS.star : S.ICONS.user;
+        var canEditRow = state.canWrite || isMe;
+        var canDelete = state.canWrite && !isMe;
         return (
           "<tr data-id=\"" + S.esc(user.id) + "\">" +
             "<td>" +
@@ -115,16 +120,18 @@
               "</div>" +
             "</td>" +
             "<td>" + S.esc(user.displayName || "—") + "</td>" +
-            "<td><span class=\"badge " + roleClass + "\">" + S.ICONS.star + " " +
-              S.esc(S.ROLE_LABELS[user.role] || user.role) + "</span></td>" +
+            "<td><span class=\"badge " + roleClass + "\">" + roleIcon + " " +
+              S.esc(user.roleName || S.ROLE_LABELS[user.role] || user.role) + "</span></td>" +
             "<td>" + S.esc(lastLogin) + "</td>" +
             '<td class="actions-col"><div class="actions">' +
-              '<button class="icon-btn edit" type="button" data-action="edit" title="編輯" aria-label="編輯">' +
-                S.ICONS.edit + "</button>" +
-              '<button class="icon-btn delete' + (isMe ? " is-disabled" : "") +
+              (canEditRow
+                ? '<button class="icon-btn edit" type="button" data-action="edit" title="編輯" aria-label="編輯">' +
+                  S.ICONS.edit + "</button>"
+                : "") +
+              '<button class="icon-btn delete' + (canDelete ? "" : " is-disabled") +
                 '" type="button" data-action="delete" title="' +
                 (isMe ? "無法刪除自己的帳號" : "刪除") +
-                '" aria-label="刪除"' + (isMe ? " disabled" : "") + ">" +
+                '" aria-label="刪除"' + (canDelete ? "" : " disabled") + ">" +
                 S.ICONS.trash + "</button>" +
             "</div></td>" +
           "</tr>"
@@ -140,7 +147,15 @@
 
   function renderForm(data, mode) {
     var title = mode === "create" ? "新增使用者" : (state.accountOnly ? "我的帳號" : "編輯使用者");
-    var roleLocked = state.accountOnly && state.me && state.me.role !== "admin";
+    var roleLocked = state.accountOnly || !state.canWrite;
+    var roles = state.roles.length ? state.roles : [
+      { key: "admin", name: "管理者" },
+      { key: "editor", name: "編輯者" }
+    ];
+    var roleOptions = roles.map(function (role) {
+      return '<option value="' + S.esc(role.key) + '"' + (data.role === role.key ? " selected" : "") + ">" +
+        S.esc(role.name) + "</option>";
+    }).join("");
     return (
       '<form id="user-form" class="inquiry-form" novalidate>' +
         "<h2>" + title + "</h2>" +
@@ -155,8 +170,7 @@
           '<label class="field' + (mode === "create" ? "" : " span-2") + '"><span>顯示名稱 *</span><input name="displayName" required value="' + S.esc(data.displayName || "") + '"></label>' +
           '<label class="field span-2"><span>Email</span><input name="email" type="email" value="' + S.esc(data.email || "") + '"></label>' +
           '<label class="field"><span>角色 *</span><select name="role"' + (roleLocked ? " disabled" : "") + ">" +
-            '<option value="admin"' + (data.role === "admin" ? " selected" : "") + ">管理者</option>" +
-            '<option value="staff"' + (data.role === "staff" ? " selected" : "") + ">專員</option>" +
+            roleOptions +
           "</select></label>" +
           '<label class="field"><span>狀態</span><select name="active"' + (state.accountOnly ? " disabled" : "") + ">" +
             '<option value="1"' + (data.active !== false ? " selected" : "") + ">啟用</option>" +
@@ -267,6 +281,14 @@
   async function loadUsers() {
     var data = await S.api("/api/users");
     state.items = data.items || [];
+    state.roles = data.roles || [];
+    state.canWrite = Boolean(data.canEdit);
+    createBtn.hidden = !state.canWrite;
+    var currentRole = roleFilter.value;
+    roleFilter.innerHTML = '<option value="">全部</option>' + state.roles.map(function (role) {
+      return '<option value="' + S.esc(role.key) + '">' + S.esc(role.name) + "</option>";
+    }).join("");
+    roleFilter.value = currentRole;
     renderTable();
   }
 
@@ -275,7 +297,7 @@
     var payload = {
       displayName: String(data.get("displayName") || "").trim(),
       email: String(data.get("email") || "").trim(),
-      role: String(data.get("role") || (state.editing && state.editing.role) || "staff"),
+      role: String(data.get("role") || (state.editing && state.editing.role) || "editor"),
       active: String(data.get("active") || (state.editing && state.editing.active === false ? "0" : "1")) === "1",
       password: String(data.get("password") || "")
     };
@@ -357,7 +379,7 @@
     if (action === "edit") {
       state.pendingAvatar = null;
       state.removeAvatar = false;
-      openEditor(user, "edit", false);
+      openEditor(user, "edit", !state.canWrite);
     } else if (action === "delete") {
       deleteUser(user).catch(function (error) {
         if (error.message !== "unauthorized") S.toast(error.message, true);
@@ -454,11 +476,8 @@
   S.ensureAuth()
     .then(function (me) {
       state.me = me;
-      if (me.role !== "admin") {
-        S.toast("需要管理員權限", true);
-        location.replace("/admin/");
-        return null;
-      }
+      state.canWrite = S.hasPermission(me, "users.write");
+      createBtn.hidden = !state.canWrite;
       return loadUsers();
     })
     .catch(function (error) {

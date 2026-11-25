@@ -1,8 +1,8 @@
-import { requireAdmin, requireRole } from "../../_lib/auth.js";
 import { json, readJson } from "../../_lib/http.js";
-import { countAdmins, deleteUser, getUserById, ROLES, updateUser } from "../../_lib/users.js";
+import { authorize } from "../../_lib/rbac.js";
+import { assertKnownRole, countAdmins, deleteUser, getUserById, updateUser } from "../../_lib/users.js";
 
-function validatePatch(body) {
+async function validatePatch(db, body) {
   const errors = [];
   const data = {};
 
@@ -17,8 +17,11 @@ function validatePatch(body) {
     else data.email = email;
   }
   if (body.role != null) {
-    if (!ROLES.includes(body.role)) errors.push("角色不正確");
-    else data.role = body.role;
+    try {
+      data.role = await assertKnownRole(db, body.role);
+    } catch {
+      errors.push("角色不正確");
+    }
   }
   if (body.active != null) data.active = Boolean(body.active);
   if (body.password != null && body.password !== "") {
@@ -30,9 +33,10 @@ function validatePatch(body) {
 }
 
 export async function onRequestGet(context) {
-  const session = await requireAdmin(context.request, context.env);
-  if (!session) return json({ error: "Unauthorized" }, 401);
-  if (!requireRole(session, ["admin"])) return json({ error: "需要管理員權限" }, 403);
+  const gate = await authorize(context, "users.read");
+  const isSelf = gate.session && gate.session.id === context.params.id;
+  if (gate.response && !isSelf) return gate.response;
+  if (!gate.session) return json({ error: "Unauthorized" }, 401);
   if (!context.env.DB) return json({ error: "D1 database is not bound." }, 500);
 
   const item = await getUserById(context.env.DB, context.params.id);
@@ -49,15 +53,20 @@ export async function onRequestPatch(context) {
 }
 
 async function patchHandler(context) {
-  const session = await requireAdmin(context.request, context.env);
-  if (!session) return json({ error: "Unauthorized" }, 401);
-  if (!requireRole(session, ["admin"])) return json({ error: "需要管理員權限" }, 403);
+  const gate = await authorize(context, "users.write");
+  const isSelf = gate.session && gate.session.id === context.params.id;
+  if (!gate.session) return json({ error: "Unauthorized" }, 401);
+  if (gate.response && !isSelf) return gate.response;
   if (!context.env.DB) return json({ error: "D1 database is not bound." }, 500);
 
   const body = await readJson(context.request);
   if (!body) return json({ error: "Invalid JSON." }, 400);
-  const parsed = validatePatch(body);
+  const parsed = await validatePatch(context.env.DB, body);
   if (!parsed.ok) return json({ error: parsed.errors[0], errors: parsed.errors }, 400);
+  if (gate.response && isSelf) {
+    delete parsed.data.role;
+    delete parsed.data.active;
+  }
 
   const current = await getUserById(context.env.DB, context.params.id);
   if (!current) return json({ error: "Not found" }, 404);
@@ -80,14 +89,13 @@ async function patchHandler(context) {
 }
 
 export async function onRequestDelete(context) {
-  const session = await requireAdmin(context.request, context.env);
-  if (!session) return json({ error: "Unauthorized" }, 401);
-  if (!requireRole(session, ["admin"])) return json({ error: "需要管理員權限" }, 403);
+  const gate = await authorize(context, "users.write");
+  if (gate.response) return gate.response;
   if (!context.env.DB) return json({ error: "D1 database is not bound." }, 500);
 
   const current = await getUserById(context.env.DB, context.params.id);
   if (!current) return json({ error: "Not found" }, 404);
-  if (session.id && current.id === session.id) {
+  if (gate.session.id && current.id === gate.session.id) {
     return json({ error: "無法刪除目前登入的帳號" }, 400);
   }
   if (current.role === "admin" && current.active) {
