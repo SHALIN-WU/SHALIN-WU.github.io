@@ -8,6 +8,10 @@ database_name = "northgo-inquiries"
 database_id = "905c7247-2d61-4297-be24-037ddffe0ffa"
 preview_database_id = "DB"
 
+[[kv_namespaces]]
+binding = "MEDIA_KV"
+id = "d8e976bd04c444b8b5856b5cb999aefe"
+
 [vars]
 ADMIN_USERNAME = "admin"
 COOKIE_SECURE = "true"

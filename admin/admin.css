@@ -675,3 +675,69 @@ button { cursor: pointer; }
   border-color: var(--navy);
   color: #fff;
 }
+
+.media-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  flex: 1 1 16rem;
+}
+.filter-field input[type="file"] {
+  border-radius: 0.85rem;
+  padding: 0.45rem 0.7rem;
+}
+.media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.75rem;
+  padding: 1rem 1.1rem 1.2rem;
+}
+.media-grid .empty { grid-column: 1 / -1; }
+.media-card {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 0.9rem;
+  background: #fff;
+}
+.media-thumb {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: 0.65rem;
+  background: #e7eef5;
+  display: block;
+}
+.media-meta {
+  min-width: 0;
+  display: grid;
+  gap: 0.28rem;
+}
+.media-name {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.media-sub,
+.media-url {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+.media-url {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.media-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  margin-top: 0.2rem;
+}
+.media-actions .btn {
+  min-height: 2.15rem;
+  padding: 0.35rem 0.75rem;
+}
