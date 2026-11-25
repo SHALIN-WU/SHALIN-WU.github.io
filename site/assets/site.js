@@ -132,7 +132,106 @@
       .catch(function () {});
   }
 
+  var PAGE_NOT_FOUND = {
+    en: "Page not found",
+    "zh-tw": "找不到這個頁面",
+    ja: "ページが見つかりません",
+    vi: "Không tìm thấy trang"
+  };
+  var DYNAMIC_MEDIA_ID = "([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})";
+  var DYNAMIC_MEDIA_ABS = new RegExp("^https://northgo-73a\\.pages\\.dev/api/media/" + DYNAMIC_MEDIA_ID + "$", "i");
+  var DYNAMIC_MEDIA_REL = new RegExp("^/api/media/" + DYNAMIC_MEDIA_ID + "$", "i");
+
+  function dynamicMediaId(line) {
+    var text = String(line || "").replace(/^\s+|\s+$/g, "");
+    var match = text.match(DYNAMIC_MEDIA_ABS) || text.match(DYNAMIC_MEDIA_REL);
+    return match ? match[1].toLowerCase() : "";
+  }
+
+  function renderDynamicBody(container, value) {
+    container.textContent = "";
+    String(value || "").split("\n").forEach(function (line, index) {
+      if (index) container.appendChild(document.createTextNode("\n"));
+      var id = dynamicMediaId(line);
+      if (!id) {
+        container.appendChild(document.createTextNode(line));
+        return;
+      }
+      var image = document.createElement("img");
+      image.src = "https://northgo-73a.pages.dev/api/media/" + id;
+      image.alt = "";
+      container.appendChild(image);
+    });
+  }
+
+  function syncDynamicLangs(slug) {
+    var paths = { en: "/p/", "zh-tw": "/zh-tw/p/", ja: "/ja/p/", vi: "/vi/p/" };
+    document.querySelectorAll("[data-dynamic-lang]").forEach(function (el) {
+      var lang = el.getAttribute("data-dynamic-lang");
+      var href = paths[lang] || "/p/";
+      if (slug) href += "?slug=" + encodeURIComponent(slug);
+      el.setAttribute("href", href);
+    });
+  }
+
+  function showDynamicMissing(message) {
+    var title = document.getElementById("page-title");
+    var status = document.getElementById("page-status");
+    var body = document.getElementById("page-body");
+    var crumb = document.getElementById("page-crumb");
+    if (title) title.textContent = message;
+    if (crumb) crumb.textContent = message;
+    if (body) body.textContent = "";
+    if (status) {
+      status.hidden = true;
+      status.textContent = message;
+    }
+    document.title = message + " | Northgo";
+  }
+
+  function showDynamicPage(page) {
+    var title = document.getElementById("page-title");
+    var status = document.getElementById("page-status");
+    var body = document.getElementById("page-body");
+    var crumb = document.getElementById("page-crumb");
+    if (title) title.textContent = page.title;
+    if (crumb) crumb.textContent = page.title;
+    if (status) {
+      status.hidden = true;
+      status.textContent = "";
+    }
+    if (body) renderDynamicBody(body, page.body);
+    document.title = page.title + " | Northgo";
+  }
+
+  function loadDynamicPage() {
+    var root = document.querySelector("[data-dynamic-page]");
+    if (!root) return;
+    var locale = pageLocale();
+    var slug = (new URLSearchParams(location.search).get("slug") || "").replace(/^\s+|\s+$/g, "").toLowerCase();
+    syncDynamicLangs(slug);
+    var message = PAGE_NOT_FOUND[locale] || PAGE_NOT_FOUND.en;
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) || slug.length < 2 || slug.length > 48) {
+      showDynamicMissing(message);
+      return;
+    }
+    fetch(cmsOrigin() + "/api/public/pages?locale=" + encodeURIComponent(locale) + "&slug=" + encodeURIComponent(slug), { credentials: "omit" })
+      .then(function (response) {
+        if (!response.ok) throw new Error("missing");
+        return response.json();
+      })
+      .then(function (payload) {
+        var page = payload && payload.page;
+        if (!page || typeof page.title !== "string" || typeof page.body !== "string") throw new Error("missing");
+        showDynamicPage(page);
+      })
+      .catch(function () {
+        showDynamicMissing(message);
+      });
+  }
+
   applyPublishedContent();
+  loadDynamicPage();
 
   var form = document.getElementById("enquiry-form");
   if (!form) return;

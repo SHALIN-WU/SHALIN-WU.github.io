@@ -1,6 +1,6 @@
 {
   "name": "northgo-website",
-  "version": "2.5.0",
+  "version": "2.6.0",
   "private": true,
   "type": "module",
   "description": "Northgo static site with Cloudflare Pages Functions and D1 enquiry admin",
@@ -16,6 +16,8 @@
     "db:cms": "wrangler d1 execute northgo-inquiries --remote --file=./migrations/0004_cms.sql",
     "db:media:local": "wrangler d1 execute northgo-inquiries --local --file=./migrations/0005_media.sql",
     "db:media": "wrangler d1 execute northgo-inquiries --remote --file=./migrations/0005_media.sql",
+    "db:pages:local": "wrangler d1 execute northgo-inquiries --local --file=./migrations/0006_pages.sql",
+    "db:pages": "wrangler d1 execute northgo-inquiries --remote --file=./migrations/0006_pages.sql",
     "deploy": "npm run prepare:dist && wrangler pages deploy dist --project-name=northgo",
     "hash-password": "node server/hash-password.mjs"
   },

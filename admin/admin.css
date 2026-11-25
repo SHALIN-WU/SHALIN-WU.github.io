@@ -741,3 +741,28 @@ button { cursor: pointer; }
   min-height: 2.15rem;
   padding: 0.35rem 0.75rem;
 }
+.field.check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.field.check span { margin: 0; }
+.page-preview {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  padding: 0.75rem 0.85rem;
+  background: #f8fafc;
+  min-height: 4.5rem;
+}
+.page-preview img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0.45rem 0;
+}
+.data-table .actions .btn {
+  min-height: 2.15rem;
+  padding: 0.35rem 0.7rem;
+}
